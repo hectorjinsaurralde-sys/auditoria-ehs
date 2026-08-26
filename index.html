@@ -1,0 +1,1230 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Auditoría EHS">
+  <title>Auditoría EHS</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root{
+      --bg:#f4f7f8;--card:#fff;--text:#132126;--muted:#637078;--line:#d9e1e4;
+      --primary:#0f766e;--primary2:#115e59;--ok:#167c4b;--bad:#b42318;--warn:#9a6700;
+      --soft:#eef3f4;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .app{max-width:980px;margin:auto;min-height:100vh}
+    header{background:var(--primary);color:white;padding:18px 16px 14px;position:sticky;top:0;z-index:10}
+    header h1{font-size:20px;margin:0}
+    header p{font-size:13px;margin:4px 0 0;opacity:.9}
+    nav{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;padding:9px;background:#0b5f59;position:sticky;top:69px;z-index:9}
+    nav button{border:0;border-radius:10px;padding:10px 6px;background:rgba(255,255,255,.12);color:white;font-weight:700;font-size:12px;min-height:44px}
+    nav button.active{background:white;color:var(--primary)}
+    main{padding:14px 14px 90px}
+    .page{display:none}.page.active{display:block}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:12px}
+    .grid{display:grid;gap:10px}.grid.two{grid-template-columns:1fr 1fr}
+    label{display:block;font-size:13px;font-weight:700}
+    input,select,textarea{width:100%;margin-top:5px;border:1px solid #bfcbd0;border-radius:10px;background:white;color:var(--text);padding:11px 12px;min-height:45px;font-size:16px}
+    textarea{min-height:76px;resize:vertical}
+    .btn{border:0;border-radius:11px;min-height:46px;padding:10px 14px;font-weight:800}
+    .primary{background:var(--primary);color:white}.primary:hover{background:var(--primary2)}
+    .secondary{background:var(--soft);color:var(--text);border:1px solid var(--line)}
+    .danger{background:#fff0ef;color:var(--bad);border:1px solid #f0b5b0}
+    .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .between{justify-content:space-between}
+    .muted{color:var(--muted)} .small{font-size:12px}
+    .q{border-top:1px solid var(--line);padding-top:13px;margin-top:13px}
+    .q:first-child{border-top:0;padding-top:0;margin-top:0}
+    .qtitle{font-weight:850;margin-bottom:5px}
+    .choices{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:10px 0}
+    .choice{border:1px solid #c5d0d4;border-radius:10px;background:white;min-height:44px;font-weight:800}
+    .choice.ok.sel{background:#e6f6ee;border-color:#66b58c;color:#0f6b40}
+    .choice.bad.sel{background:#fff0ef;border-color:#df8d86;color:#a11f15}
+    .choice.na.sel{background:#edf1f3;border-color:#9eabb1;color:#4b5960}
+    .score{font-size:34px;font-weight:900;color:var(--primary)}
+    .pill{display:inline-block;padding:6px 9px;border-radius:999px;background:#eef5f4;color:#0c625c;font-size:12px;font-weight:800}
+    .audit-card{border-left:5px solid var(--primary)}
+    .status-bad{border-left-color:var(--bad)} .status-ok{border-left-color:var(--ok)}
+    .photo-preview{max-width:140px;max-height:110px;border-radius:9px;border:1px solid var(--line);margin-top:8px;display:block}
+    .list-item{padding:11px 0;border-top:1px solid var(--line)}
+    .list-item:first-child{border-top:0}
+    .section-title{margin:0 0 10px;font-size:18px}
+    .notice{border-radius:12px;padding:11px 12px;background:#fff8df;border:1px solid #ead69a;color:#6f5510;font-size:13px}
+    .success{background:#eaf8f0;border-color:#99d1b3;color:#145a36}
+    .hidden{display:none!important}
+    .footer-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .grow{flex:1}
+    .count{font-size:12px;font-weight:800;color:var(--muted)}
+    .editor-q{border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px;background:#fbfcfc}
+    .editor-q .mini{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:900}
+    .report-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+    .tag{display:inline-block;padding:4px 7px;border-radius:999px;background:#edf5f4;color:#0f6a63;font-size:11px;font-weight:850;margin-bottom:6px}
+    .critical{background:#fff0ef;color:#a11f15}
+    .rating{display:inline-block;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900}
+    .rating.good{background:#e6f6ee;color:#0f6b40}.rating.regular{background:#fff6d8;color:#7a5b00}.rating.bad{background:#fff0ef;color:#a11f15}
+    .follow-card{border:1px solid var(--line);border-radius:12px;padding:11px;margin-top:9px;background:#fbfcfc}
+    .metric{background:var(--soft);border-radius:12px;padding:10px 12px}.metric strong{font-size:22px;display:block;margin-top:2px}
+    .result-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .result-bubble{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;font-size:32px;color:#fff;font-weight:900;box-shadow:inset 0 -6px 0 rgba(0,0,0,.08)}
+    .result-bubble.good{background:#16a34a}.result-bubble.regular{background:#eab308}.result-bubble.bad{background:#ef4444}
+    .result-bubble.sm{width:46px;height:46px;font-size:22px}
+    .chart-grid{display:grid;grid-template-columns:1fr;gap:12px}
+    .chart-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}
+    canvas.chart{width:100%;height:280px;background:#fff;border-radius:12px}
+    .chart-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .chart-note{font-size:12px;color:var(--muted);margin-top:6px}
+    .summary-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+    .summary-table th,.summary-table td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
+    .summary-table th{color:var(--muted);font-size:12px;text-transform:uppercase}
+
+    @media(max-width:650px){
+      .grid.two{grid-template-columns:1fr}
+      nav{top:69px}
+      nav button{font-size:11px}
+      main{padding-left:10px;padding-right:10px}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Auditoría EHS</h1>
+    <p>Seguridad · Higiene · Medio Ambiente</p>
+  </header>
+  <nav id="tabs">
+    <button data-page="new" class="active">Auditar</button>
+    <button data-page="history">Historial</button>
+    <button data-page="deviations">Desvíos</button>
+    <button data-page="settings">Preguntas</button>
+    <button data-page="charts">Gráficos</button>
+    <button data-page="backup">Respaldo</button>
+  </nav>
+
+  <main>
+    <section id="page-new" class="page active">
+      <div class="card">
+        <h2 class="section-title">Nueva auditoría</h2>
+        <div class="grid two">
+          <label>Sector<select id="sectorSelect"></select></label>
+          <label>Turno<select id="turno"><option>Mañana</option><option>Tarde</option><option>Noche</option></select></label>
+          <label>Auditor<input id="auditor" placeholder="Nombre y apellido"></label>
+          <label>Fecha<input id="fecha" type="date"></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Personal / EPP</h2>
+        <div class="grid two">
+          <label>Persona que acompaña la auditoría<input id="companion" placeholder="Nombre y apellido"></label>
+          <label>Cantidad de personas en el turno<input id="shiftPeople" type="number" min="0" max="999" inputmode="numeric" placeholder="Ej.: 24"></label>
+        </div>
+        <div class="small muted" style="margin-top:7px">La dotación del turno queda registrada como contexto para la evaluación de EPP y del sector.</div>
+      </div>
+
+      <div class="card" id="previousDeviationsCard">
+        <div class="row between">
+          <div>
+            <h2 class="section-title" style="margin-bottom:3px">Seguimiento de desvíos anteriores</h2>
+            <div class="small muted">Verificá qué pasó con los hallazgos pendientes de este sector.</div>
+          </div>
+          <span class="pill" id="openPrevCount">0 abiertos</span>
+        </div>
+        <div id="previousDeviations"></div>
+      </div>
+
+      <div class="card">
+        <div class="row between">
+          <div>
+            <h2 class="section-title" style="margin-bottom:3px">Checklist</h2>
+            <div class="small muted">Las preguntas cambian según el sector.</div>
+          </div>
+          <span class="pill" id="progress">0/0</span>
+        </div>
+        <div id="questions"></div>
+      </div>
+
+      <div class="card">
+        <label>Observación general<textarea id="generalObs" placeholder="Comentario general, condición destacada o acción propuesta"></textarea></label>
+      </div>
+
+      <div class="card">
+        <div class="row between">
+          <div><div class="small muted">Resultado</div><div class="result-wrap"><div class="result-bubble bad" id="liveBubble">☹️</div><div><div class="score" id="liveScore">0%</div><span class="rating bad" id="liveRating">Malo</span></div></div></div>
+          <div style="text-align:right"><div class="small muted">Desvíos</div><div style="font-size:27px;font-weight:900;color:var(--bad)" id="liveBad">0</div></div>
+        </div>
+        <button class="btn primary" id="saveAudit" style="width:100%;margin-top:10px">Guardar auditoría</button>
+      </div>
+      <div id="saveMsg" class="notice success hidden"></div>
+    </section>
+
+    <section id="page-history" class="page">
+      <div class="card">
+        <div class="row between">
+          <div>
+            <h2 class="section-title" style="margin-bottom:3px">Historial</h2>
+            <div class="small muted">Auditorías guardadas en este dispositivo.</div>
+          </div>
+          <span class="count" id="historyCount"></span>
+        </div>
+        <div id="historyList"></div>
+      </div>
+    </section>
+
+    <section id="page-deviations" class="page">
+      <div class="card">
+        <div class="row between"><div><h2 class="section-title" style="margin-bottom:3px">Plan y seguimiento de desvíos</h2><div class="small muted">Cada “No cumple” queda abierto hasta que lo verifiques y cierres.</div></div><span class="pill" id="openDevCount">0 abiertos</span></div>
+        <div class="grid two" style="margin-top:12px"><label>Sector<select id="devSectorFilter"><option value="">Todos</option></select></label><label>Estado<select id="devStatusFilter"><option value="open">Abiertos</option><option value="closed">Cerrados</option><option value="">Todos</option></select></label></div>
+      </div>
+      <div class="card"><div class="grid two" id="devMetrics"></div></div>
+      <div id="deviationList"></div>
+    </section>
+
+    <section id="page-settings" class="page">
+      <div class="card">
+        <h2 class="section-title">Personalizar sectores y preguntas</h2>
+        <div class="notice">Podés personalizar cada pregunta: texto, categoría, criterio de observación, peso en el puntaje y si querés marcarla como crítica. Los cambios quedan guardados en este dispositivo.</div>
+        <div class="grid two" style="margin-top:12px"><label>Bueno desde (%)<input id="goodThreshold" type="number" min="2" max="100" value="90"></label><label>Regular desde (%)<input id="regularThreshold" type="number" min="1" max="99" value="75"></label></div>
+        <div class="small muted" style="margin-top:6px">Ejemplo: Bueno ≥ 90%, Regular 75–89%, Malo &lt; 75%. Podés cambiar estos límites.</div>
+        <div class="grid two" style="margin-top:12px">
+          <label>Sector a editar<select id="editSector"></select></label>
+          <label>Nuevo sector<input id="newSectorName" placeholder="Ej.: Laboratorio"></label>
+        </div>
+        <div class="row" style="margin-top:9px">
+          <button class="btn primary" id="addSector">Agregar sector</button>
+          <button class="btn danger" id="deleteSector">Eliminar sector</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row between">
+          <h2 class="section-title" style="margin:0">Preguntas del sector</h2>
+          <button class="btn secondary" id="addQuestion">+ Pregunta</button>
+        </div>
+        <div id="questionEditor"></div>
+        <button class="btn primary" id="saveQuestions" style="width:100%;margin-top:12px">Guardar cambios</button>
+      </div>
+    </section>
+
+    <section id="page-charts" class="page">
+      <div class="card">
+        <div class="row between"><div><h2 class="section-title" style="margin-bottom:3px">Gráficos y avance</h2><div class="small muted">Visualizá la evolución del puntaje y el resultado mensual por sector auditado.</div></div></div>
+        <div class="grid two" style="margin-top:12px">
+          <label>Sector para evolución<select id="chartSectorFilter"><option value="">Todos</option></select></label>
+          <label>Mes para comparación por sector<select id="chartMonthFilter"><option value="">Seleccionar mes</option></select></label>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-box">
+          <div class="row between"><div><strong>Evolución mensual del puntaje</strong><div class="chart-note">Promedio de auditorías por mes.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadTrendChart">Descargar gráfico</button></div></div>
+          <canvas id="trendChart" class="chart" width="900" height="280"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="row between"><div><strong>Resultado mensual por sector</strong><div class="chart-note">Comparación del mes seleccionado.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadMonthlyChart">Descargar gráfico</button></div></div>
+          <canvas id="monthlySectorChart" class="chart" width="900" height="320"></canvas>
+        </div>
+        <div class="chart-box">
+          <strong>Resumen mensual por sector</strong>
+          <div id="monthlySummaryTable"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-backup" class="page">
+      <div class="card">
+        <h2 class="section-title">Respaldo y cambio de celular</h2>
+        <p class="muted" style="margin-top:0">Exportá toda la configuración y el historial a un archivo JSON. En otro celular instalás la app e importás ese archivo.</p>
+        <div class="footer-actions">
+          <button class="btn primary grow" id="exportData">Exportar respaldo</button>
+          <label class="btn secondary grow" style="text-align:center;display:flex;align-items:center;justify-content:center">
+            Importar respaldo
+            <input id="importData" type="file" accept="application/json" class="hidden">
+          </label>
+        </div>
+      </div>
+      <div class="card">
+        <h2 class="section-title">Instalar como app</h2>
+        <p class="muted" style="margin-top:0">Cuando esta carpeta esté publicada con HTTPS, abrí el enlace desde Chrome y elegí <strong>Agregar a pantalla principal</strong> o <strong>Instalar aplicación</strong>.</p>
+        <button class="btn primary hidden" id="installBtn" style="width:100%">Instalar Auditoría EHS</button>
+        <div id="installHelp" class="small muted">Si el botón de instalación no aparece, usá el menú del navegador.</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const DEFAULT = {
+  catalogVersion: 6,
+  sectors: {
+  "Producción": [
+    {
+      "text": "¿Los pasillos de circulación se encuentran limpios, ordenados y libres de obstrucciones?",
+      "category": "Orden y limpieza",
+      "detail": "Verificar pasillos peatonales y accesos libres.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los espacios entre máquinas se encuentran limpios, ordenados y sin materiales fuera de lugar?",
+      "category": "Orden y limpieza",
+      "detail": "Verificar acumulación de materiales, scrap y obstáculos entre equipos.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los canastos de scrap se encuentran correctamente ubicados, identificados y sin desbordes?",
+      "category": "Orden y limpieza",
+      "detail": "Verificar ubicación, identificación, estado y nivel de carga.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los residuos se encuentran correctamente segregados en recipientes identificados?",
+      "category": "Residuos",
+      "detail": "Verificar segregación, identificación y ausencia de mezclas indebidas.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿El kit antiderrame se encuentra completo, identificado y accesible?",
+      "category": "Emergencias",
+      "detail": "Verificar disponibilidad de absorbentes, elementos de contención y señalización.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los extintores se encuentran visibles, señalizados y libres de obstrucciones?",
+      "category": "Emergencias",
+      "detail": "Verificar acceso libre, señalización y condición general.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los hidrantes se encuentran accesibles y libres de obstrucciones?",
+      "category": "Emergencias",
+      "detail": "Verificar que no existan materiales, pallets o equipos bloqueando el acceso.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Las salidas de emergencia se encuentran señalizadas y libres de obstrucciones?",
+      "category": "Emergencias",
+      "detail": "Verificar puertas, recorridos y accesos de evacuación.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los tableros eléctricos se encuentran cerrados, identificados y en buenas condiciones?",
+      "category": "Eléctrico",
+      "detail": "Verificar tapas, cerraduras, identificación y ausencia de daños visibles.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los tableros eléctricos y sus accesos se encuentran libres de obstrucciones?",
+      "category": "Eléctrico",
+      "detail": "Verificar espacio libre y acceso inmediato al tablero.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Se observan pérdidas de agua, aceite u otros fluidos?",
+      "category": "Condiciones del sector",
+      "detail": "Verificar pérdidas que puedan generar resbalones, deterioro o riesgo operativo.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Se observan goteras o filtraciones que puedan generar riesgos?",
+      "category": "Condiciones del sector",
+      "detail": "Verificar techos, cañerías y zonas con presencia de agua.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Las máquinas poseen sus protecciones y resguardos correctamente colocados?",
+      "category": "Máquinas",
+      "detail": "Verificar resguardos fijos y móviles en zonas de atrapamiento o contacto.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los micros de seguridad, switches, sensores e interbloqueos se encuentran operativos y sin anulaciones?",
+      "category": "Máquinas",
+      "detail": "Verificar dispositivos instalados, sin puenteos ni anulaciones visibles.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Las paradas de emergencia se encuentran accesibles, identificadas y operativas?",
+      "category": "Máquinas",
+      "detail": "Verificar ubicación, identificación y ausencia de obstrucciones.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los dispositivos de seguridad de las máquinas se encuentran completos y funcionando correctamente?",
+      "category": "Máquinas",
+      "detail": "Verificar dispositivos adicionales de protección y seguridad del equipo.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los elementos y accesorios de izaje se encuentran identificados y en condiciones seguras?",
+      "category": "Izaje",
+      "detail": "Verificar eslingas, grilletes, cadenas, ganchos y estado general.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿El lavaojos se encuentra accesible, identificado y en condiciones de uso?",
+      "category": "Emergencias",
+      "detail": "Verificar acceso, limpieza, señalización y condición general.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿El sector destinado a carga de baterías se encuentra señalizado, ordenado y en condiciones seguras?",
+      "category": "Carga de baterías",
+      "detail": "Verificar orden, ventilación, cables, cargadores y ausencia de obstrucciones.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los estándares, instructivos y cartelería de seguridad requeridos se encuentran disponibles y actualizados?",
+      "category": "Estándares",
+      "detail": "Verificar documentación visual, instructivos o estándares aplicables al sector.",
+      "weight": 1,
+      "critical": false
+    }
+  ],
+  "Talleres de Mantenimiento": [
+    {
+      "text": "¿Los extintores se encuentran visibles, señalizados y libres de obstrucciones?",
+      "category": "Emergencias",
+      "detail": "Verificar acceso libre y condición general.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los hidrantes se encuentran accesibles y libres de obstrucciones?",
+      "category": "Emergencias",
+      "detail": "Verificar acceso inmediato al equipo contra incendio.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿El kit antiderrame se encuentra completo, identificado y accesible?",
+      "category": "Emergencias",
+      "detail": "Verificar absorbentes, contención y disponibilidad.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los residuos se encuentran correctamente segregados e identificados?",
+      "category": "Residuos",
+      "detail": "Verificar recipientes, rótulos y ausencia de mezclas indebidas.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Las instalaciones eléctricas se encuentran en buenas condiciones?",
+      "category": "Eléctrico",
+      "detail": "Verificar cables, fichas, tomas, prolongaciones e instalaciones visibles.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los tableros eléctricos se encuentran cerrados, accesibles, sin daños y libres de obstrucciones?",
+      "category": "Eléctrico",
+      "detail": "Verificar estado físico, cierre, identificación y acceso.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los pasillos y vías de circulación se encuentran libres de materiales y obstáculos?",
+      "category": "Orden y limpieza",
+      "detail": "Verificar circulación peatonal y accesos a puestos de trabajo.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los bancos de trabajo se encuentran ordenados y en condiciones seguras?",
+      "category": "Orden y limpieza",
+      "detail": "Verificar herramientas, materiales y condiciones de la superficie de trabajo.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Se observan derrames de aceite, grasas u otros productos?",
+      "category": "Orden y limpieza",
+      "detail": "Verificar piso, equipos y zonas de mantenimiento.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿El lavaojos se encuentra accesible y en condiciones de uso?",
+      "category": "Emergencias",
+      "detail": "Verificar acceso, limpieza, señalización y funcionamiento visible.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los elementos y accesorios de izaje se encuentran identificados, inspeccionados y en condiciones seguras?",
+      "category": "Izaje",
+      "detail": "Verificar eslingas, cadenas, grilletes, ganchos y registros aplicables.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Las herramientas manuales se encuentran en condiciones seguras de uso?",
+      "category": "Herramientas",
+      "detail": "Verificar mangos, filos, deformaciones, desgaste y uso adecuado.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Las herramientas eléctricas se encuentran en buenas condiciones, con cables, fichas y protecciones adecuadas?",
+      "category": "Herramientas",
+      "detail": "Verificar integridad eléctrica y protecciones del equipo.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los trabajos que lo requieren cuentan con el permiso de trabajo correspondiente?",
+      "category": "Permisos de trabajo",
+      "detail": "Verificar permiso aplicable y condiciones definidas para la tarea.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los hierros, repuestos e insumos se encuentran correctamente almacenados?",
+      "category": "Almacenamiento",
+      "detail": "Verificar estabilidad, orden y ausencia de elementos sobresalientes o inestables.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los productos químicos se encuentran identificados, cerrados y almacenados correctamente?",
+      "category": "Productos químicos",
+      "detail": "Verificar rótulos, envases, cierres y almacenamiento seguro.",
+      "weight": 1,
+      "critical": false
+    }
+  ],
+  "Logística / Expedición": [
+    {
+      "text": "¿Los extintores se encuentran visibles, señalizados y libres de obstrucciones?",
+      "category": "Emergencias",
+      "detail": "Verificar acceso libre y señalización.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los hidrantes se encuentran accesibles y libres de obstrucciones?",
+      "category": "Emergencias",
+      "detail": "Verificar que pallets, equipos o materiales no bloqueen el acceso.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los espejos parabólicos se encuentran correctamente ubicados, limpios y en buenas condiciones?",
+      "category": "Circulación",
+      "detail": "Verificar visibilidad en cruces y esquinas de circulación.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿El sector de carga de baterías se encuentra correctamente señalizado, ventilado, ordenado y libre de fuentes de ignición?",
+      "category": "Carga de baterías",
+      "detail": "Verificar cargadores, cables, orden, ventilación y señalización.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿El sector se encuentra limpio, ordenado y sin materiales fuera de los lugares establecidos?",
+      "category": "Orden y limpieza",
+      "detail": "Verificar piso, zonas de espera, pasillos y áreas de almacenamiento.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los materiales almacenados en racks se encuentran correctamente ubicados y dentro de los límites establecidos?",
+      "category": "Almacenamiento",
+      "detail": "Verificar ubicación, estabilidad, alturas y condiciones del material.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los racks se encuentran sin daños visibles y en condiciones seguras?",
+      "category": "Almacenamiento",
+      "detail": "Verificar montantes, largueros, protecciones y deformaciones visibles.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los autoelevadores se encuentran en condiciones seguras de operación?",
+      "category": "Equipos móviles",
+      "detail": "Verificar condición general, señalización, luces, ruedas y elementos de seguridad.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Las zorras eléctricas y apiladores se encuentran en condiciones seguras de operación?",
+      "category": "Equipos móviles",
+      "detail": "Verificar condición general y dispositivos de seguridad.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los camioneros y transportistas utilizan chaleco reflectivo dentro de las áreas establecidas?",
+      "category": "Circulación",
+      "detail": "Verificar cumplimiento durante permanencia y circulación en el sector.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Se realiza y registra el checklist previo al uso de los autoelevadores?",
+      "category": "Equipos móviles",
+      "detail": "Verificar registro previo al uso y tratamiento de anomalías detectadas.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Las vías de circulación peatonal y vehicular se encuentran libres de obstáculos?",
+      "category": "Circulación",
+      "detail": "Verificar sendas, cruces, portones y recorridos de equipos móviles.",
+      "weight": 1,
+      "critical": false
+    }
+  ],
+  "Áreas Exteriores": [
+    {
+      "text": "¿Las calles internas se encuentran limpias, ordenadas y libres de obstáculos?",
+      "category": "Orden y limpieza",
+      "detail": "Verificar circulación vehicular y presencia de materiales o residuos.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los pasillos y sendas peatonales exteriores se encuentran libres y correctamente delimitados?",
+      "category": "Orden y limpieza",
+      "detail": "Verificar recorrido peatonal, demarcación y obstáculos.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los contenedores de residuos se encuentran identificados, correctamente ubicados y sin desbordes?",
+      "category": "Residuos",
+      "detail": "Verificar identificación, estado, cierre y nivel de carga.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿El entorno de los contenedores se encuentra limpio y libre de residuos dispersos?",
+      "category": "Residuos",
+      "detail": "Verificar limpieza perimetral y ausencia de residuos en piso.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los perímetros de edificios, depósitos y sectores se encuentran limpios y sin acumulación de materiales?",
+      "category": "Perímetros",
+      "detail": "Verificar acumulaciones, maleza, obstrucciones y almacenamiento no previsto.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los extintores exteriores se encuentran visibles y libres de obstrucciones?",
+      "category": "Emergencias",
+      "detail": "Verificar acceso y señalización.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los hidrantes se encuentran accesibles y libres de obstrucciones?",
+      "category": "Emergencias",
+      "detail": "Verificar acceso libre en todo momento.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Las salidas de emergencia exteriores y sus recorridos permanecen libres?",
+      "category": "Emergencias",
+      "detail": "Verificar apertura, acceso y recorrido exterior de evacuación.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los sectores de almacenamiento exterior se encuentran ordenados y correctamente delimitados?",
+      "category": "Almacenamiento",
+      "detail": "Verificar delimitación, estabilidad y orden del material almacenado.",
+      "weight": 1,
+      "critical": false
+    },
+    {
+      "text": "¿Los materiales almacenados temporalmente se encuentran ubicados de manera segura y sin interferir con circulaciones, equipos de emergencia o accesos?",
+      "category": "Almacenamiento",
+      "detail": "Verificar que no obstruyan calles, sendas, hidrantes, extintores o salidas.",
+      "weight": 1,
+      "critical": false
+    }
+  ]
+}
+};
+function normalizeQuestion(q){
+  if(typeof q==="string") return {text:q,category:"General",detail:"",weight:1,critical:false};
+  return {
+    text:String(q?.text||"Nueva pregunta"),
+    category:String(q?.category||"General"),
+    detail:String(q?.detail||""),
+    weight:Math.min(5,Math.max(1,Number(q?.weight)||1)),
+    critical:Boolean(q?.critical)
+  };
+}
+function normalizeConfig(c){
+  let out=c&&c.sectors?c:JSON.parse(JSON.stringify(DEFAULT));
+  if(Number(out.catalogVersion||0)<6){
+    const savedThresholds=out.thresholds||{good:90,regular:75};
+    out=JSON.parse(JSON.stringify(DEFAULT));
+    out.thresholds=savedThresholds;
+  }
+  Object.keys(out.sectors).forEach(k=>out.sectors[k]=(out.sectors[k]||[]).map(normalizeQuestion));
+  out.catalogVersion=6;
+  if(!out.thresholds) out.thresholds={good:90,regular:75};
+  out.thresholds.good=Math.min(100,Math.max(2,Number(out.thresholds.good)||90));
+  out.thresholds.regular=Math.min(out.thresholds.good-1,Math.max(1,Number(out.thresholds.regular)||75));
+  return out;
+}
+
+const LS_CONFIG = "ehs_config_v1";
+const LS_AUDITS = "ehs_audits_v1";
+const LS_DEVIATIONS = "ehs_deviations_v1";
+let config = normalizeConfig(safeParse(localStorage.getItem(LS_CONFIG), DEFAULT));
+let audits = safeParse(localStorage.getItem(LS_AUDITS), []);
+let deviations = safeParse(localStorage.getItem(LS_DEVIATIONS), []);
+let answers = [];
+let deferredPrompt = null;
+saveConfig();
+saveDeviations();
+
+function safeParse(s, fallback){ try{return s?JSON.parse(s):JSON.parse(JSON.stringify(fallback));}catch{return JSON.parse(JSON.stringify(fallback));} }
+function saveConfig(){ localStorage.setItem(LS_CONFIG, JSON.stringify(config)); }
+function saveAudits(){ localStorage.setItem(LS_AUDITS, JSON.stringify(audits)); }
+function saveDeviations(){ localStorage.setItem(LS_DEVIATIONS, JSON.stringify(deviations)); }
+function todayLocal(){ const d=new Date(); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-"); }
+document.getElementById("fecha").value=todayLocal();
+
+function setPage(name){
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+name));
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.page===name));
+  if(name==="history") renderHistory();
+  if(name==="settings") renderSettings();
+  if(name==="deviations") renderDeviations();
+  if(name==="charts") renderCharts();
+}
+document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>setPage(b.dataset.page)));
+
+function refreshSectors(){
+  const names=Object.keys(config.sectors);
+  ["sectorSelect","editSector","chartSectorFilter"].forEach(id=>{
+    const sel=document.getElementById(id);
+    const old=sel.value;
+    sel.innerHTML=names.map(n=>`<option>${escapeHtml(n)}</option>`).join("");
+    if(names.includes(old)) sel.value=old;
+  });
+  const df=document.getElementById("devSectorFilter");
+  if(df){const old=df.value;df.innerHTML='<option value="">Todos</option>'+names.map(n=>`<option>${escapeHtml(n)}</option>`).join("");if(names.includes(old))df.value=old;}
+}
+function escapeHtml(v){ return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m])); }
+
+function ratingFor(score){const g=Number(config.thresholds?.good)||90,r=Number(config.thresholds?.regular)||75;return score>=g?"Bueno":score>=r?"Regular":"Malo";}
+function ratingClass(x){return x==="Bueno"?"good":x==="Regular"?"regular":"bad";}
+function ratingEmoji(x){return x==="Bueno"?"😄":x==="Regular"?"😐":"☹️";}
+function monthLabel(key){if(!key) return ""; const [y,m]=key.split('-'); return `${m}/${y}`;}
+function ratingFromAvg(v){return ratingFor(Number(v)||0);}
+function average(arr){return arr.length?Math.round(arr.reduce((s,n)=>s+Number(n||0),0)/arr.length):0;}
+function downloadCanvas(canvas,filename){const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=filename;a.click();}
+function drawLineChart(canvas, labels, values){
+  const ctx=canvas.getContext('2d'); const W=canvas.width,H=canvas.height; ctx.clearRect(0,0,W,H); ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.font='12px Arial'; ctx.fillStyle='#5b6870';
+  if(!labels.length){ctx.fillText('No hay datos suficientes para mostrar el gráfico.',20,30);return;}
+  const pad={l:52,r:18,t:20,b:42}; const gw=W-pad.l-pad.r, gh=H-pad.t-pad.b;
+  ctx.strokeStyle='#d9e1e4'; ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){const y=pad.t+gh-(gh*i/5); ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke(); ctx.fillText(String(i*20),10,y+4);}
+  const pts=values.map((v,i)=>({x:pad.l+(labels.length===1?gw/2:(gw*i/(labels.length-1))), y:pad.t+gh-(Math.max(0,Math.min(100,v))*gh/100)}));
+  ctx.strokeStyle='#0f766e'; ctx.lineWidth=3; ctx.beginPath(); pts.forEach((p,i)=>{if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y)}); ctx.stroke();
+  pts.forEach((p,i)=>{const r=ratingFromAvg(values[i]); ctx.fillStyle=r==='Bueno'?'#16a34a':r==='Regular'?'#eab308':'#ef4444'; ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#334155'; ctx.fillText(values[i]+'%',p.x-10,p.y-10);});
+  ctx.fillStyle='#5b6870'; labels.forEach((lab,i)=>{const x=pts[i].x; ctx.save(); ctx.translate(x,H-20); ctx.rotate(-0.35); ctx.fillText(lab,0,0); ctx.restore();});
+}
+function drawBarChart(canvas, labels, values){
+  const ctx=canvas.getContext('2d'); const W=canvas.width,H=canvas.height; ctx.clearRect(0,0,W,H); ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.font='12px Arial'; ctx.fillStyle='#5b6870';
+  if(!labels.length){ctx.fillText('No hay auditorías para el mes seleccionado.',20,30);return;}
+  const pad={l:52,r:18,t:20,b:60}; const gw=W-pad.l-pad.r, gh=H-pad.t-pad.b;
+  ctx.strokeStyle='#d9e1e4'; ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){const y=pad.t+gh-(gh*i/5); ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke(); ctx.fillText(String(i*20),10,y+4);}
+  const slot=gw/labels.length; const bw=Math.min(60, slot*0.6);
+  labels.forEach((lab,i)=>{const x=pad.l + slot*i + (slot-bw)/2; const h=(Math.max(0,Math.min(100,values[i]))*gh/100); const y=pad.t+gh-h; const r=ratingFromAvg(values[i]); ctx.fillStyle=r==='Bueno'?'#16a34a':r==='Regular'?'#eab308':'#ef4444'; ctx.fillRect(x,y,bw,h); ctx.fillStyle='#334155'; ctx.fillText(values[i]+'%',x+Math.max(0,bw/2-12),y-8); ctx.save(); ctx.translate(x+bw/2,H-22); ctx.rotate(-0.35); ctx.fillText(lab,0,0); ctx.restore();});
+}
+function buildMonthlySummary(month){
+  const filtered=audits.filter(a=>(a.fecha||'').slice(0,7)===month);
+  if(!filtered.length) return '<p class="muted">No hay auditorías en el mes seleccionado.</p>';
+  const sectors=[...new Set(filtered.map(a=>a.sector))].sort();
+  const rows=sectors.map(sec=>{const arr=filtered.filter(a=>a.sector===sec); const avg=average(arr.map(a=>a.score)); const res=ratingFromAvg(avg); return `<tr><td>${escapeHtml(sec)}</td><td>${arr.length}</td><td>${avg}%</td><td><span class="rating ${ratingClass(res)}">${escapeHtml(res)} ${ratingEmoji(res)}</span></td></tr>`;}).join('');
+  return `<table class="summary-table"><thead><tr><th>Sector</th><th>Auditorías</th><th>Promedio</th><th>Resultado</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+let followupState={};
+function renderPreviousDeviations(){
+  const sector=document.getElementById("sectorSelect").value;
+  const open=deviations.filter(d=>d.sector===sector&&d.status!=="closed");
+  document.getElementById("openPrevCount").textContent=open.length+" abiertos";
+  const w=document.getElementById("previousDeviations");
+  if(!open.length){w.innerHTML='<p class="muted small">No hay desvíos pendientes de auditorías anteriores para este sector.</p>';return;}
+  w.innerHTML="";
+  open.forEach(d=>{
+    const st=followupState[d.id]||{result:"pending",note:""};const div=document.createElement("div");div.className="follow-card";
+    div.innerHTML=`<div class="small muted">${escapeHtml(d.firstDetected||"")} · ${escapeHtml(d.category||"General")}</div><strong>${escapeHtml(d.question)}</strong>${d.observation?`<div class="small" style="margin-top:4px">${escapeHtml(d.observation)}</div>`:""}${d.action?`<div class="small muted" style="margin-top:4px"><strong>Acción:</strong> ${escapeHtml(d.action)}</div>`:""}<div class="choices" style="grid-template-columns:1fr 1fr"><button class="choice ok ${st.result==="closed"?"sel":""}" data-v="closed">✓ Corregido</button><button class="choice bad ${st.result==="open"?"sel":""}" data-v="open">✕ Sigue abierto</button></div><input class="follow-note" placeholder="Observación de la verificación" value="${escapeHtml(st.note||"")}">`;
+    div.querySelectorAll(".choice").forEach(b=>b.addEventListener("click",()=>{followupState[d.id]={result:b.dataset.v,note:div.querySelector(".follow-note").value};renderPreviousDeviations();}));
+    div.querySelector(".follow-note").addEventListener("input",e=>{followupState[d.id]=followupState[d.id]||{result:"pending",note:""};followupState[d.id].note=e.target.value;});w.appendChild(div);
+  });
+}
+
+
+async function compressPhoto(file){
+  const TARGET_BYTES=140*1024;
+  const MAX_SIDE=1024;
+  const MIN_SIDE=640;
+  let bitmap=null;
+  try{
+    if('createImageBitmap' in window) bitmap=await createImageBitmap(file);
+  }catch(e){ bitmap=null; }
+
+  let img=bitmap;
+  if(!img){
+    const url=URL.createObjectURL(file);
+    try{
+      img=await new Promise((resolve,reject)=>{
+        const el=new Image();
+        el.onload=()=>resolve(el); el.onerror=reject; el.src=url;
+      });
+    } finally { URL.revokeObjectURL(url); }
+  }
+
+  const ow=img.width||img.naturalWidth, oh=img.height||img.naturalHeight;
+  if(!ow||!oh) throw new Error('No se pudo leer la imagen');
+  let scale=Math.min(1,MAX_SIDE/Math.max(ow,oh));
+  let w=Math.max(1,Math.round(ow*scale)), h=Math.max(1,Math.round(oh*scale));
+  let quality=.72, blob=null;
+
+  for(let attempt=0;attempt<8;attempt++){
+    const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    const ctx=canvas.getContext('2d',{alpha:false});
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+    blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+    if(!blob) throw new Error('No se pudo comprimir la imagen');
+    if(blob.size<=TARGET_BYTES) break;
+    if(quality>.48) quality-=.08;
+    else if(Math.max(w,h)>MIN_SIDE){ w=Math.max(1,Math.round(w*.82)); h=Math.max(1,Math.round(h*.82)); quality=.62; }
+    else break;
+  }
+  if(bitmap&&bitmap.close) bitmap.close();
+  const dataUrl=await new Promise((resolve,reject)=>{
+    const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(blob);
+  });
+  return {dataUrl,size:blob.size,width:w,height:h,originalSize:file.size};
+}
+function formatKB(bytes){ return Math.max(1,Math.round((Number(bytes)||0)/1024))+' KB'; }
+
+function initAudit(){
+  const sector=document.getElementById("sectorSelect").value;
+  const qs=(config.sectors[sector]||[]).map(normalizeQuestion);
+  answers=qs.map(q=>({question:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical,value:null,obs:"",photo:null}));
+  renderQuestions();
+  renderPreviousDeviations();
+}
+function renderQuestions(){
+  const wrap=document.getElementById("questions");
+  wrap.innerHTML="";
+  answers.forEach((a,i)=>{
+    const div=document.createElement("div");
+    div.className="q";
+    div.innerHTML=`
+      <div>${a.category?`<span class="tag ${a.critical?"critical":""}">${escapeHtml(a.category)}${a.critical?" · CRÍTICA":""}</span>`:""}</div>
+      <div class="qtitle">${i+1}. ${escapeHtml(a.question)}</div>
+      ${a.detail?`<div class="small muted">${escapeHtml(a.detail)}</div>`:""}
+      <div class="choices">
+        <button class="choice ok ${a.value==="ok"?"sel":""}" data-value="ok">✓ Cumple</button>
+        <button class="choice bad ${a.value==="bad"?"sel":""}" data-value="bad">✕ No cumple</button>
+        <button class="choice na ${a.value==="na"?"sel":""}" data-value="na">N/A</button>
+      </div>
+      <input class="obs" placeholder="Observación / acción requerida" value="${escapeHtml(a.obs||"")}">
+      <label style="margin-top:8px">Foto de evidencia
+        <input type="file" accept="image/*" capture="environment" class="photo">
+      </label>
+      <div class="small muted">La app reduce automáticamente las fotos pesadas antes de guardarlas.</div>
+      <div class="preview"></div>`;
+    div.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>{
+      a.value=btn.dataset.value; renderQuestions();
+    }));
+    div.querySelector(".obs").addEventListener("input",e=>a.obs=e.target.value);
+    div.querySelector(".photo").addEventListener("change",async e=>{
+      const f=e.target.files?.[0]; if(!f)return;
+      if(!f.type.startsWith("image/")){ alert("Seleccioná una imagen válida."); e.target.value=""; return; }
+      const preview=div.querySelector(".preview");
+      preview.innerHTML='<div class="small muted">Optimizando foto…</div>';
+      e.target.disabled=true;
+      try{
+        const out=await compressPhoto(f);
+        a.photo=out.dataUrl;
+        a.photoInfo={size:out.size,width:out.width,height:out.height,originalSize:out.originalSize};
+        renderQuestions();
+      }catch(err){
+        console.error(err);
+        alert("No pude optimizar esa foto. Probá sacándola nuevamente o elegí otra imagen.");
+        e.target.value="";
+        e.target.disabled=false;
+        preview.innerHTML='';
+      }
+    });
+    if(a.photo){
+      const info=a.photoInfo?`<div class="small muted" style="margin-top:4px">Foto optimizada: ${formatKB(a.photoInfo.size)} · ${a.photoInfo.width}×${a.photoInfo.height}</div>`:"";
+      div.querySelector(".preview").innerHTML=`<img src="${a.photo}" class="photo-preview" alt="Evidencia">${info}`;
+    }
+    wrap.appendChild(div);
+  });
+  updateScore();
+}
+function updateScore(){
+  const applicable=answers.filter(a=>a.value && a.value!=="na");
+  const ok=answers.filter(a=>a.value==="ok").length;
+  const bad=answers.filter(a=>a.value==="bad").length;
+  const answered=answers.filter(a=>a.value).length;
+  const totalW=applicable.reduce((s,a)=>s+(Number(a.weight)||1),0);
+  const okW=applicable.filter(a=>a.value==="ok").reduce((s,a)=>s+(Number(a.weight)||1),0);
+  const score=totalW?Math.round(okW/totalW*100):0;
+  document.getElementById("liveScore").textContent=score+"%";
+  document.getElementById("liveBad").textContent=bad;
+  document.getElementById("progress").textContent=`${answered}/${answers.length}`;
+  const r=ratingFor(score),el=document.getElementById("liveRating");el.textContent=r;el.className="rating "+ratingClass(r); const bub=document.getElementById("liveBubble"); bub.className="result-bubble "+ratingClass(r); bub.textContent=ratingEmoji(r);
+}
+document.getElementById("sectorSelect").addEventListener("change",initAudit);
+
+document.getElementById("saveAudit").addEventListener("click",()=>{
+  const sector=document.getElementById("sectorSelect").value;
+  const auditor=document.getElementById("auditor").value.trim();
+  if(!auditor){ alert("Ingresá el nombre del auditor."); return; }
+  if(answers.some(a=>!a.value)){ alert("Faltan responder uno o más ítems."); return; }
+  const applicable=answers.filter(a=>a.value!=="na");
+  const totalW=applicable.reduce((s,a)=>s+(Number(a.weight)||1),0);
+  const okW=applicable.filter(a=>a.value==="ok").reduce((s,a)=>s+(Number(a.weight)||1),0);
+  const score=totalW?Math.round(okW/totalW*100):0;
+  const record={
+    id: Date.now(),
+    sector,
+    turno:document.getElementById("turno").value,
+    auditor,
+    companion:document.getElementById("companion").value.trim(),
+    shiftPeople:Math.max(0,Number(document.getElementById("shiftPeople").value)||0),
+    fecha:document.getElementById("fecha").value,
+    generalObs:document.getElementById("generalObs").value.trim(),
+    score,
+    rating:ratingFor(score),
+    bad:answers.filter(a=>a.value==="bad").length,
+    followups:JSON.parse(JSON.stringify(followupState)),
+    answers:JSON.parse(JSON.stringify(answers))
+  };
+  Object.entries(followupState).forEach(([id,st])=>{const d=deviations.find(x=>String(x.id)===String(id));if(!d||st.result==="pending")return;d.lastVerified=record.fecha;d.lastVerificationNote=st.note||"";if(st.result==="closed"){d.status="closed";d.closedDate=record.fecha;}else{d.status="open";d.lastSeen=record.fecha;}});
+  answers.filter(a=>a.value==="bad").forEach(a=>{let d=deviations.find(x=>x.sector===sector&&x.status!=="closed"&&x.question===a.question);if(d){d.lastSeen=record.fecha;d.observation=a.obs||d.observation;if(a.photo)d.photo=a.photo;d.timesSeen=(d.timesSeen||1)+1;}else{deviations.unshift({id:Date.now()+Math.random(),sector,question:a.question,category:a.category||"General",detail:a.detail||"",observation:a.obs||"",photo:a.photo||null,critical:Boolean(a.critical),firstDetected:record.fecha,lastSeen:record.fecha,timesSeen:1,status:"open",action:"",responsible:"",dueDate:"",closedDate:"",lastVerified:"",lastVerificationNote:""});}});
+  audits.unshift(record);followupState={};
+  try{ saveAudits(); saveDeviations(); }
+  catch(e){
+    audits.shift();
+    alert("No se pudo guardar. Puede que las fotos ocupen demasiado espacio. Exportá un respaldo y eliminá auditorías viejas.");
+    return;
+  }
+  const msg=document.getElementById("saveMsg");
+  msg.textContent=`Auditoría guardada: ${sector} · ${score}% (${record.rating}) · ${record.bad} desvío(s).`;
+  msg.classList.remove("hidden");
+  document.getElementById("generalObs").value="";
+  document.getElementById("companion").value="";
+  document.getElementById("shiftPeople").value="";
+  initAudit();
+  setTimeout(()=>msg.classList.add("hidden"),5000);
+});
+
+
+function reportHtml(a){
+  const rating=a.rating||ratingFor(a.score);
+  const criticalFails=(a.answers||[]).filter(x=>x.value==="bad" && x.critical).length;
+  const okCount=(a.answers||[]).filter(x=>x.value==="ok").length;
+  const badCount=(a.answers||[]).filter(x=>x.value==="bad").length;
+  const naCount=(a.answers||[]).filter(x=>x.value==="na").length;
+  const totalCount=(a.answers||[]).length;
+  const bubbleClass=ratingClass(rating);
+  const rows=(a.answers||[]).map((x,i)=>`
+    <tr>
+      <td class="num">${i+1}</td>
+      <td><span class="cat">${escapeHtml(x.category||"General")}</span></td>
+      <td><strong>${escapeHtml(x.question)}</strong>${x.detail?`<div class="small-note">${escapeHtml(x.detail)}</div>`:""}</td>
+      <td><span class="pill ${x.value==='ok'?'ok':x.value==='bad'?'bad':'na'}">${x.value==='ok'?'Cumple':x.value==='bad'?'No cumple':'N/A'}</span></td>
+      <td>${escapeHtml(x.obs||"")||"—"}</td>
+      <td>${x.photo?`<img src="${x.photo}" style="max-width:160px;max-height:115px;border-radius:10px;border:2px solid #d9e4ea">`:"—"}</td>
+    </tr>`).join("");
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe ${escapeHtml(a.sector)}</title>
+  <style>
+    :root{--green:#16a34a;--green-soft:#e8f8ee;--yellow:#eab308;--yellow-soft:#fff7d6;--red:#ef4444;--red-soft:#ffe8e8;--teal:#0f766e;--ink:#17303a;--muted:#5d6d75;--line:#d9e4ea;--panel:#ffffff;--bg:#f4f9fb}
+    *{box-sizing:border-box} body{font-family:Arial,sans-serif;color:var(--ink);margin:0;background:var(--bg)} .wrap{padding:26px}
+    .hero{background:linear-gradient(135deg,#0f766e 0%,#06b6d4 100%);color:#fff;padding:24px 26px;border-radius:22px;box-shadow:0 10px 24px rgba(15,118,110,.18)}
+    .hero h1{margin:0 0 6px;font-size:30px}.hero .meta{font-size:14px;opacity:.96;line-height:1.5}
+    .kpis{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr;gap:14px;margin-top:16px}
+    .box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 6px 16px rgba(18,46,58,.05)}
+    .label{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+    .score{font-size:42px;font-weight:900;line-height:1}.sub{font-size:14px;font-weight:800;margin-top:6px}
+    .result-wrap{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .result-bubble{width:98px;height:98px;border-radius:50%;display:grid;place-items:center;font-size:48px;color:#fff;font-weight:900;box-shadow:inset 0 -8px 0 rgba(0,0,0,.09)}
+    .result-bubble.good{background:var(--green)} .result-bubble.regular{background:var(--yellow)} .result-bubble.bad{background:var(--red)}
+    .section{margin-top:18px}.section-title{background:#e8f6f5;color:#0a5d57;border-left:8px solid #0f766e;border-radius:14px;padding:12px 14px;font-size:20px;font-weight:900;margin-bottom:12px}
+    .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.mini{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center}.mini .n{font-size:28px;font-weight:900;line-height:1.05;margin-top:4px}.mini.ok .n{color:var(--green)} .mini.bad .n{color:var(--red)} .mini.na .n{color:#64748b} .mini.crit .n{color:#b42318}
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden} th,td{padding:10px 9px;vertical-align:top;border-bottom:1px solid #e7eef2} th{background:linear-gradient(180deg,#dff4f3 0%,#cfeeed 100%);text-align:left;color:#0c5f59;font-size:12px} tr:nth-child(even) td{background:#fbfdfe} tr:last-child td{border-bottom:0}
+    .num{font-weight:900;text-align:center;width:34px}.cat{display:inline-block;background:#edf8ff;border:1px solid #ccecff;color:#0d6aa8;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900}.pill{display:inline-block;border-radius:999px;padding:5px 10px;font-weight:900;font-size:11px}.pill.ok{background:var(--green-soft);color:#166534}.pill.bad{background:var(--red-soft);color:#b42318}.pill.na{background:#edf2f7;color:#475569}.small-note{margin-top:5px;color:var(--muted);font-size:11px;line-height:1.35}
+    .obs{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 16px}.footer-note{margin-top:14px;color:var(--muted);font-size:11px;text-align:right}
+    @media print{body{background:#fff}.wrap{padding:10mm}.hero,.box{box-shadow:none}}
+  </style></head><body>
+  <div class="wrap">
+    <div class="hero"><h1>Informe de Auditoría EHS</h1><div class="meta"><strong>Sector:</strong> ${escapeHtml(a.sector)} &nbsp;|&nbsp; <strong>Fecha:</strong> ${escapeHtml(a.fecha)} &nbsp;|&nbsp; <strong>Turno:</strong> ${escapeHtml(a.turno)} &nbsp;|&nbsp; <strong>Auditor:</strong> ${escapeHtml(a.auditor)}<br><strong>Acompaña:</strong> ${escapeHtml(a.companion||'—')} &nbsp;|&nbsp; <strong>Personas en turno:</strong> ${Number(a.shiftPeople)||0}</div></div>
+    <div class="kpis">
+      <div class="box"><div class="label">Resultado</div><div class="result-wrap"><div><div class="score">${a.score}%</div><div class="sub">${escapeHtml(rating)}</div></div><div class="result-bubble ${bubbleClass}">${ratingEmoji(rating)}</div></div></div>
+      <div class="box"><div class="label">No cumple</div><div class="score" style="color:var(--red)">${badCount}</div><div class="sub">Desvíos detectados</div></div>
+      <div class="box"><div class="label">Cumple</div><div class="score" style="color:var(--green)">${okCount}</div><div class="sub">Ítems conformes</div></div>
+      <div class="box"><div class="label">Críticos</div><div class="score" style="color:${criticalFails?'#b42318':'#16a34a'}">${criticalFails}</div><div class="sub">Desvíos críticos</div></div>
+    </div>
+    <div class="summary">
+      <div class="mini ok"><div class="label">Cumple</div><div class="n">${okCount}</div></div>
+      <div class="mini bad"><div class="label">No cumple</div><div class="n">${badCount}</div></div>
+      <div class="mini na"><div class="label">N/A</div><div class="n">${naCount}</div></div>
+      <div class="mini crit"><div class="label">Total ítems</div><div class="n">${totalCount}</div></div>
+    </div>
+    <div class="section"><div class="section-title">Detalle de la auditoría</div><table><thead><tr><th>#</th><th>Categoría</th><th>Pregunta / criterio</th><th>Resultado</th><th>Observación</th><th>Evidencia</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${a.generalObs?`<div class="section"><div class="section-title">Observación general</div><div class="obs">${escapeHtml(a.generalObs)}</div></div>`:''}
+    <div class="footer-note">Informe generado desde Auditoría EHS</div>
+  </div></body></html>`;
+}
+function downloadReport(a){
+  const html=reportHtml(a);
+  const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  const safe=(a.sector||"sector").replace(/[^\w\-áéíóúñ ]/gi,"").replace(/\s+/g,"-");
+  link.href=url; link.download=`Informe-EHS-${safe}-${a.fecha}.html`; link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function printReport(a){
+  const w=window.open("","_blank");
+  if(!w){ alert("El navegador bloqueó la ventana. Habilitá ventanas emergentes para guardar el PDF."); return; }
+  w.document.open(); w.document.write(reportHtml(a)); w.document.close();
+  setTimeout(()=>w.print(),350);
+}
+
+function renderHistory(){
+  const list=document.getElementById("historyList");
+  document.getElementById("historyCount").textContent=audits.length+" registro(s)";
+  if(!audits.length){ list.innerHTML='<p class="muted">Todavía no hay auditorías guardadas.</p>'; return; }
+  list.innerHTML="";
+  audits.forEach((a,idx)=>{
+    const div=document.createElement("div");
+    div.className=`card audit-card ${a.bad?"status-bad":"status-ok"}`;
+    div.style.marginTop="10px";
+    div.innerHTML=`
+      <div class="row between">
+        <div><strong>${escapeHtml(a.sector)}</strong><div class="small muted">${escapeHtml(a.fecha)} · ${escapeHtml(a.turno)} · ${escapeHtml(a.auditor)}</div><div class="small muted">Acompaña: ${escapeHtml(a.companion||"—")} · Dotación turno: ${Number(a.shiftPeople)||0}</div></div>
+        <div style="text-align:right"><div class="result-wrap" style="justify-content:flex-end"><div class="result-bubble sm ${ratingClass(a.rating||ratingFor(a.score))}">${ratingEmoji(a.rating||ratingFor(a.score))}</div><div><div style="font-size:24px;font-weight:900">${a.score}%</div><span class="rating ${ratingClass(a.rating||ratingFor(a.score))}">${escapeHtml(a.rating||ratingFor(a.score))}</span></div></div></div>
+      </div>
+      <div class="small" style="margin-top:7px"><strong>${a.bad}</strong> desvío(s)</div>
+      <div class="report-actions">
+        <button class="btn secondary details">Ver detalle</button>
+        <button class="btn primary report">Descargar informe</button>
+        <button class="btn secondary pdf">Guardar PDF</button>
+        <button class="btn danger delete">Eliminar</button>
+      </div>
+      <div class="detail hidden"></div>`;
+    div.querySelector(".details").addEventListener("click",()=>{
+      const det=div.querySelector(".detail");
+      if(det.classList.contains("hidden")){
+        det.classList.remove("hidden");
+        det.innerHTML=`<div class="list-item"><strong>Contexto de auditoría</strong><div class="small">Acompañante: ${escapeHtml(a.companion||"No informado")} · Personas en el turno: ${Number(a.shiftPeople)||0}</div></div>`+(a.answers||[]).map((x,i)=>`
+          <div class="list-item">
+            <strong>${i+1}. ${escapeHtml(x.question)}</strong>
+            <div class="small muted">${escapeHtml(x.category||"General")}${x.critical?" · Crítica":""}${x.detail?" · "+escapeHtml(x.detail):""}</div>
+            <div class="small">${x.value==="ok"?"Cumple":x.value==="bad"?"No cumple":"N/A"}${x.obs?" · "+escapeHtml(x.obs):""}</div>
+            ${x.photo?`<img src="${x.photo}" class="photo-preview" alt="Evidencia">`:""}
+          </div>`).join("")+(a.generalObs?`<div class="list-item"><strong>Observación general</strong><div class="small">${escapeHtml(a.generalObs)}</div></div>`:"");
+      } else det.classList.add("hidden");
+    });
+    div.querySelector(".report").addEventListener("click",()=>downloadReport(a));
+    div.querySelector(".pdf").addEventListener("click",()=>printReport(a));
+    div.querySelector(".delete").addEventListener("click",()=>{
+      if(confirm("¿Eliminar esta auditoría?")){
+        audits.splice(idx,1); saveAudits(); renderHistory();
+      }
+    });
+    list.appendChild(div);
+  });
+}
+
+
+function renderCharts(){
+  refreshSectors();
+  const monthSel=document.getElementById('chartMonthFilter');
+  const sectorSel=document.getElementById('chartSectorFilter');
+  const months=[...new Set(audits.map(a=>(a.fecha||'').slice(0,7)).filter(Boolean))].sort();
+  const oldM=monthSel.value; monthSel.innerHTML=months.length?months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join(''):'<option value="">Sin datos</option>';
+  if(months.includes(oldM)) monthSel.value=oldM; else if(months.length) monthSel.value=months[months.length-1];
+  const sec=sectorSel.value||''; const selectedMonth=monthSel.value||'';
+  const trendSource=sec?audits.filter(a=>a.sector===sec):audits;
+  const grouped={}; trendSource.forEach(a=>{const m=(a.fecha||'').slice(0,7); if(!m) return; (grouped[m]=grouped[m]||[]).push(Number(a.score)||0);});
+  const trendMonths=Object.keys(grouped).sort();
+  const trendLabels=trendMonths.map(monthLabel); const trendValues=trendMonths.map(m=>average(grouped[m]));
+  drawLineChart(document.getElementById('trendChart'), trendLabels, trendValues);
+  const monthly=audits.filter(a=>(a.fecha||'').slice(0,7)===selectedMonth);
+  const sectors=[...new Set(monthly.map(a=>a.sector))].sort();
+  const sectorValues=sectors.map(sec=>average(monthly.filter(a=>a.sector===sec).map(a=>a.score)));
+  drawBarChart(document.getElementById('monthlySectorChart'), sectors, sectorValues);
+  document.getElementById('monthlySummaryTable').innerHTML=selectedMonth?buildMonthlySummary(selectedMonth):'<p class="muted">Sin datos.</p>';
+}
+document.getElementById('chartSectorFilter').addEventListener('change',renderCharts);
+document.getElementById('chartMonthFilter').addEventListener('change',renderCharts);
+document.getElementById('downloadTrendChart').addEventListener('click',()=>downloadCanvas(document.getElementById('trendChart'),'grafico-evolucion.png'));
+document.getElementById('downloadMonthlyChart').addEventListener('click',()=>downloadCanvas(document.getElementById('monthlySectorChart'),'grafico-mensual-por-sector.png'));
+
+function renderDeviations(){
+  refreshSectors();const sf=document.getElementById("devSectorFilter").value,stf=document.getElementById("devStatusFilter").value;const filtered=deviations.filter(d=>(!sf||d.sector===sf)&&(!stf||d.status===stf));const open=deviations.filter(d=>d.status!=="closed");document.getElementById("openDevCount").textContent=open.length+" abiertos";
+  const aa=sf?audits.filter(a=>a.sector===sf):audits,month=todayLocal().slice(0,7),avg=aa.length?Math.round(aa.reduce((x,a)=>x+(Number(a.score)||0),0)/aa.length):0,mc=aa.filter(a=>(a.fecha||"").slice(0,7)===month).length;document.getElementById("devMetrics").innerHTML=`<div class="metric"><span class="small muted">Puntaje promedio</span><strong>${avg}%</strong></div><div class="metric"><span class="small muted">Auditorías este mes</span><strong>${mc}</strong></div>`;
+  const w=document.getElementById("deviationList");if(!filtered.length){w.innerHTML='<div class="card"><p class="muted">No hay desvíos con este filtro.</p></div>';return;}w.innerHTML="";filtered.forEach(d=>{const div=document.createElement("div");div.className="card audit-card "+(d.status==="closed"?"status-ok":"status-bad");div.innerHTML=`<div class="row between"><div><span class="tag ${d.critical?"critical":""}">${escapeHtml(d.category||"General")}${d.critical?" · CRÍTICO":""}</span><br><strong>${escapeHtml(d.question)}</strong></div><span class="pill">${d.status==="closed"?"Cerrado":"Abierto"}</span></div><div class="small muted" style="margin-top:5px">${escapeHtml(d.sector)} · Detectado: ${escapeHtml(d.firstDetected||"")} · Visto ${d.timesSeen||1} vez/veces</div>${d.observation?`<div style="margin-top:7px">${escapeHtml(d.observation)}</div>`:""}${d.photo?`<img src="${d.photo}" class="photo-preview" alt="Evidencia">`:""}<div class="grid two" style="margin-top:10px"><label>Acción correctiva<textarea class="d-action" placeholder="Qué se va a hacer">${escapeHtml(d.action||"")}</textarea></label><label>Responsable<input class="d-resp" value="${escapeHtml(d.responsible||"")}" placeholder="Nombre / sector"></label><label>Fecha compromiso<input class="d-date" type="date" value="${escapeHtml(d.dueDate||"")}"></label><label>Estado<select class="d-status"><option value="open" ${d.status!=="closed"?"selected":""}>Abierto</option><option value="closed" ${d.status==="closed"?"selected":""}>Cerrado</option></select></label></div>${d.lastVerificationNote?`<div class="small muted" style="margin-top:8px"><strong>Última verificación:</strong> ${escapeHtml(d.lastVerified||"")} · ${escapeHtml(d.lastVerificationNote)}</div>`:""}<button class="btn primary save-dev" style="width:100%;margin-top:10px">Guardar seguimiento</button>`;div.querySelector(".save-dev").addEventListener("click",()=>{d.action=div.querySelector(".d-action").value.trim();d.responsible=div.querySelector(".d-resp").value.trim();d.dueDate=div.querySelector(".d-date").value;const ns=div.querySelector(".d-status").value;if(ns==="closed"&&d.status!=="closed")d.closedDate=todayLocal();if(ns==="open")d.closedDate="";d.status=ns;saveDeviations();renderDeviations();});w.appendChild(div);});
+}
+document.getElementById("devSectorFilter").addEventListener("change",renderDeviations);
+document.getElementById("devStatusFilter").addEventListener("change",renderDeviations);
+
+function renderSettings(){
+  refreshSectors();
+  document.getElementById("goodThreshold").value=config.thresholds.good;
+  document.getElementById("regularThreshold").value=config.thresholds.regular;
+  renderQuestionEditor();
+}
+document.getElementById("editSector").addEventListener("change",renderQuestionEditor);
+function renderQuestionEditor(){
+  const sec=document.getElementById("editSector").value;
+  const qs=(config.sectors[sec]||[]).map(normalizeQuestion);
+  config.sectors[sec]=qs;
+  const wrap=document.getElementById("questionEditor");
+  wrap.innerHTML="";
+  qs.forEach((q,i)=>{
+    const row=document.createElement("div");
+    row.className="editor-q";
+    row.innerHTML=`
+      <div class="row between"><strong>Pregunta ${i+1}</strong><button class="btn danger delq">Quitar</button></div>
+      <label style="margin-top:8px">Texto de la pregunta
+        <textarea class="qe-text">${escapeHtml(q.text)}</textarea>
+      </label>
+      <div class="grid two" style="margin-top:8px">
+        <label>Categoría<input class="qe-cat" value="${escapeHtml(q.category)}" placeholder="Ej.: EPP, Máquinas, Químicos"></label>
+        <label>Peso en puntaje<select class="qe-weight">
+          ${[1,2,3,4,5].map(n=>`<option value="${n}" ${Number(q.weight)===n?"selected":""}>${n}${n===1?" · normal":n===3?" · importante":n===5?" · muy alto":""}</option>`).join("")}
+        </select></label>
+      </div>
+      <label style="margin-top:8px">Qué mirar / criterio
+        <textarea class="qe-detail" placeholder="Ej.: verificar resguardo colocado, sensor operativo, sin puenteos...">${escapeHtml(q.detail)}</textarea>
+      </label>
+      <label style="margin-top:9px;display:flex;align-items:center;gap:9px">
+        <input class="qe-critical" type="checkbox" style="width:auto;min-height:auto;margin:0" ${q.critical?"checked":""}>
+        Marcar como pregunta crítica
+      </label>`;
+    row.querySelector(".delq").addEventListener("click",()=>{qs.splice(i,1);config.sectors[sec]=qs;renderQuestionEditor();});
+    wrap.appendChild(row);
+  });
+}
+document.getElementById("addQuestion").addEventListener("click",()=>{
+  const sec=document.getElementById("editSector").value;
+  config.sectors[sec].push({text:"Nueva pregunta",category:"General",detail:"",weight:1,critical:false});
+  renderQuestionEditor();
+});
+document.getElementById("saveQuestions").addEventListener("click",()=>{
+  const sec=document.getElementById("editSector").value;
+  const cards=[...document.querySelectorAll("#questionEditor .editor-q")];
+  const vals=cards.map(card=>({
+    text:card.querySelector(".qe-text").value.trim(),
+    category:card.querySelector(".qe-cat").value.trim()||"General",
+    detail:card.querySelector(".qe-detail").value.trim(),
+    weight:Number(card.querySelector(".qe-weight").value)||1,
+    critical:card.querySelector(".qe-critical").checked
+  })).filter(q=>q.text);
+  if(!vals.length){ alert("El sector debe tener al menos una pregunta."); return; }
+  config.sectors[sec]=vals;const good=Math.min(100,Math.max(2,Number(document.getElementById("goodThreshold").value)||90));const regular=Math.min(good-1,Math.max(1,Number(document.getElementById("regularThreshold").value)||75));config.thresholds={good,regular};saveConfig();refreshSectors();initAudit();alert("Preguntas y valoración guardadas.");
+});
+document.getElementById("addSector").addEventListener("click",()=>{
+  const input=document.getElementById("newSectorName");
+  const name=input.value.trim();
+  if(!name)return;
+  if(config.sectors[name]){ alert("Ese sector ya existe."); return; }
+  config.sectors[name]=[
+    {text:"Orden y limpieza",category:"Orden y limpieza",detail:"Verificar pasillos, accesos y puesto de trabajo.",weight:1,critical:false},
+    {text:"Uso correcto de EPP",category:"EPP",detail:"Verificar uso según riesgo y tarea.",weight:2,critical:false},
+    {text:"Condiciones seguras de máquinas/equipos",category:"Máquinas",detail:"Verificar resguardos, sensores e interbloqueos.",weight:3,critical:true}
+  ];
+  saveConfig(); input.value=""; refreshSectors(); document.getElementById("editSector").value=name; renderQuestionEditor();
+});
+document.getElementById("deleteSector").addEventListener("click",()=>{
+  const sec=document.getElementById("editSector").value;
+  if(Object.keys(config.sectors).length<=1){ alert("Debe quedar al menos un sector."); return; }
+  if(confirm(`¿Eliminar el sector "${sec}"?`)){ delete config.sectors[sec]; saveConfig(); refreshSectors(); renderQuestionEditor(); initAudit(); }
+});
+
+document.getElementById("exportData").addEventListener("click",()=>{
+  const payload={version:2,exportedAt:new Date().toISOString(),config,audits,deviations};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=`auditoria-ehs-respaldo-${todayLocal()}.json`; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+document.getElementById("importData").addEventListener("change",e=>{
+  const f=e.target.files?.[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!d.config?.sectors || !Array.isArray(d.audits)) throw new Error();
+      config=normalizeConfig(d.config); audits=d.audits; deviations=Array.isArray(d.deviations)?d.deviations:[]; saveConfig(); saveAudits(); saveDeviations(); refreshSectors(); initAudit(); alert("Respaldo importado correctamente.");
+    }catch{ alert("El archivo de respaldo no es válido."); }
+    e.target.value="";
+  };
+  r.readAsText(f);
+});
+
+window.addEventListener("beforeinstallprompt",e=>{
+  e.preventDefault(); deferredPrompt=e;
+  document.getElementById("installBtn").classList.remove("hidden");
+});
+document.getElementById("installBtn").addEventListener("click",async()=>{
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  document.getElementById("installBtn").classList.add("hidden");
+});
+
+refreshSectors();
+initAudit();
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
