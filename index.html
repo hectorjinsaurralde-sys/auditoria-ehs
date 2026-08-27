@@ -81,6 +81,11 @@
     canvas.chart{width:100%;height:280px;background:#fff;border-radius:12px}
     .chart-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
     .chart-note{font-size:12px;color:var(--muted);margin-top:6px}
+    .cloud-panel{margin:12px 14px 0;background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px}
+    .cloud-dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:#94a3b8}.cloud-dot.ok{background:#16a34a}.cloud-dot.warn{background:#eab308}.cloud-dot.bad{background:#ef4444}
+    .cloud-status{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--muted)}
+    .login-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+    @media(max-width:650px){.login-grid{grid-template-columns:1fr}}
     .summary-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
     .summary-table th,.summary-table td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
     .summary-table th{color:var(--muted);font-size:12px;text-transform:uppercase}
@@ -107,6 +112,26 @@
     <button data-page="charts">Gráficos</button>
     <button data-page="backup">Respaldo</button>
   </nav>
+
+  <section class="cloud-panel" id="cloudPanel">
+    <div id="cloudLoggedOut">
+      <div class="row between"><div><strong>Sincronización online</strong><div class="small muted">Ingresá para compartir auditorías entre el celular y la PC.</div></div><div class="cloud-status"><span class="cloud-dot warn"></span> Sin iniciar sesión</div></div>
+      <div class="login-grid">
+        <label>Email<input id="cloudEmail" type="email" autocomplete="username" value="hinsaurralde@envases.group" placeholder="tu@email.com"></label>
+        <label>Contraseña<input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Contraseña de Auditoría EHS"></label>
+      </div>
+      <div class="row" style="margin-top:9px"><button class="btn primary" id="cloudLoginBtn">Iniciar sesión y sincronizar</button><button class="btn secondary" id="cloudOfflineBtn">Continuar solo en este dispositivo</button></div>
+      <div id="cloudLoginMsg" class="small muted" style="margin-top:7px"></div>
+    </div>
+    <div id="cloudLoggedIn" class="hidden">
+      <div class="row between">
+        <div><strong>Auditoría EHS sincronizada</strong><div class="small muted" id="cloudUserText"></div></div>
+        <div class="cloud-status"><span class="cloud-dot ok" id="cloudDot"></span><span id="cloudStatusText">Conectado</span></div>
+      </div>
+      <div class="row" style="margin-top:9px"><button class="btn primary" id="cloudSyncBtn">Sincronizar ahora</button><button class="btn secondary" id="cloudLogoutBtn">Cerrar sesión</button></div>
+      <div id="cloudSyncMsg" class="small muted" style="margin-top:7px"></div>
+    </div>
+  </section>
 
   <main>
     <section id="page-new" class="page active">
@@ -682,6 +707,7 @@ const DEFAULT = {
 function normalizeQuestion(q){
   if(typeof q==="string") return {text:q,category:"General",detail:"",weight:1,critical:false};
   return {
+    id:q?.id||null,
     text:String(q?.text||"Nueva pregunta"),
     category:String(q?.category||"General"),
     detail:String(q?.detail||""),
@@ -704,12 +730,22 @@ function normalizeConfig(c){
   return out;
 }
 
+function newId(){
+  if(window.crypto&&crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&3|8);return v.toString(16);});
+}
+function isUuid(v){return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v||''));}
+
 const LS_CONFIG = "ehs_config_v1";
 const LS_AUDITS = "ehs_audits_v1";
 const LS_DEVIATIONS = "ehs_deviations_v1";
 let config = normalizeConfig(safeParse(localStorage.getItem(LS_CONFIG), DEFAULT));
 let audits = safeParse(localStorage.getItem(LS_AUDITS), []);
 let deviations = safeParse(localStorage.getItem(LS_DEVIATIONS), []);
+audits.forEach(a=>{if(!isUuid(a.id))a.id=newId();});
+deviations.forEach(d=>{if(!isUuid(d.id))d.id=newId();});
+localStorage.setItem(LS_AUDITS,JSON.stringify(audits));
+localStorage.setItem(LS_DEVIATIONS,JSON.stringify(deviations));
 let answers = [];
 let deferredPrompt = null;
 saveConfig();
@@ -928,7 +964,7 @@ document.getElementById("saveAudit").addEventListener("click",()=>{
   const okW=applicable.filter(a=>a.value==="ok").reduce((s,a)=>s+(Number(a.weight)||1),0);
   const score=totalW?Math.round(okW/totalW*100):0;
   const record={
-    id: Date.now(),
+    id: newId(),
     sector,
     turno:document.getElementById("turno").value,
     auditor,
@@ -943,9 +979,9 @@ document.getElementById("saveAudit").addEventListener("click",()=>{
     answers:JSON.parse(JSON.stringify(answers))
   };
   Object.entries(followupState).forEach(([id,st])=>{const d=deviations.find(x=>String(x.id)===String(id));if(!d||st.result==="pending")return;d.lastVerified=record.fecha;d.lastVerificationNote=st.note||"";if(st.result==="closed"){d.status="closed";d.closedDate=record.fecha;}else{d.status="open";d.lastSeen=record.fecha;}});
-  answers.filter(a=>a.value==="bad").forEach(a=>{let d=deviations.find(x=>x.sector===sector&&x.status!=="closed"&&x.question===a.question);if(d){d.lastSeen=record.fecha;d.observation=a.obs||d.observation;if(a.photo)d.photo=a.photo;d.timesSeen=(d.timesSeen||1)+1;}else{deviations.unshift({id:Date.now()+Math.random(),sector,question:a.question,category:a.category||"General",detail:a.detail||"",observation:a.obs||"",photo:a.photo||null,critical:Boolean(a.critical),firstDetected:record.fecha,lastSeen:record.fecha,timesSeen:1,status:"open",action:"",responsible:"",dueDate:"",closedDate:"",lastVerified:"",lastVerificationNote:""});}});
+  answers.filter(a=>a.value==="bad").forEach(a=>{let d=deviations.find(x=>x.sector===sector&&x.status!=="closed"&&x.question===a.question);if(d){d.lastSeen=record.fecha;d.observation=a.obs||d.observation;if(a.photo)d.photo=a.photo;d.timesSeen=(d.timesSeen||1)+1;}else{deviations.unshift({id:newId(),sector,question:a.question,category:a.category||"General",detail:a.detail||"",observation:a.obs||"",photo:a.photo||null,critical:Boolean(a.critical),firstDetected:record.fecha,lastSeen:record.fecha,timesSeen:1,status:"open",action:"",responsible:"",dueDate:"",closedDate:"",lastVerified:"",lastVerificationNote:""});}});
   audits.unshift(record);followupState={};
-  try{ saveAudits(); saveDeviations(); }
+  try{ saveAudits(); saveDeviations(); cloudSyncSoon(); }
   catch(e){
     audits.shift();
     alert("No se pudo guardar. Puede que las fotos ocupen demasiado espacio. Exportá un respaldo y eliminá auditorías viejas.");
@@ -1073,7 +1109,7 @@ function renderHistory(){
     div.querySelector(".pdf").addEventListener("click",()=>printReport(a));
     div.querySelector(".delete").addEventListener("click",()=>{
       if(confirm("¿Eliminar esta auditoría?")){
-        audits.splice(idx,1); saveAudits(); renderHistory();
+        const removed=audits.splice(idx,1)[0]; saveAudits(); if(removed)cloudDeleteRow("audits",removed.id); renderHistory();
       }
     });
     list.appendChild(div);
@@ -1108,7 +1144,7 @@ document.getElementById('downloadMonthlyChart').addEventListener('click',()=>dow
 function renderDeviations(){
   refreshSectors();const sf=document.getElementById("devSectorFilter").value,stf=document.getElementById("devStatusFilter").value;const filtered=deviations.filter(d=>(!sf||d.sector===sf)&&(!stf||d.status===stf));const open=deviations.filter(d=>d.status!=="closed");document.getElementById("openDevCount").textContent=open.length+" abiertos";
   const aa=sf?audits.filter(a=>a.sector===sf):audits,month=todayLocal().slice(0,7),avg=aa.length?Math.round(aa.reduce((x,a)=>x+(Number(a.score)||0),0)/aa.length):0,mc=aa.filter(a=>(a.fecha||"").slice(0,7)===month).length;document.getElementById("devMetrics").innerHTML=`<div class="metric"><span class="small muted">Puntaje promedio</span><strong>${avg}%</strong></div><div class="metric"><span class="small muted">Auditorías este mes</span><strong>${mc}</strong></div>`;
-  const w=document.getElementById("deviationList");if(!filtered.length){w.innerHTML='<div class="card"><p class="muted">No hay desvíos con este filtro.</p></div>';return;}w.innerHTML="";filtered.forEach(d=>{const div=document.createElement("div");div.className="card audit-card "+(d.status==="closed"?"status-ok":"status-bad");div.innerHTML=`<div class="row between"><div><span class="tag ${d.critical?"critical":""}">${escapeHtml(d.category||"General")}${d.critical?" · CRÍTICO":""}</span><br><strong>${escapeHtml(d.question)}</strong></div><span class="pill">${d.status==="closed"?"Cerrado":"Abierto"}</span></div><div class="small muted" style="margin-top:5px">${escapeHtml(d.sector)} · Detectado: ${escapeHtml(d.firstDetected||"")} · Visto ${d.timesSeen||1} vez/veces</div>${d.observation?`<div style="margin-top:7px">${escapeHtml(d.observation)}</div>`:""}${d.photo?`<img src="${d.photo}" class="photo-preview" alt="Evidencia">`:""}<div class="grid two" style="margin-top:10px"><label>Acción correctiva<textarea class="d-action" placeholder="Qué se va a hacer">${escapeHtml(d.action||"")}</textarea></label><label>Responsable<input class="d-resp" value="${escapeHtml(d.responsible||"")}" placeholder="Nombre / sector"></label><label>Fecha compromiso<input class="d-date" type="date" value="${escapeHtml(d.dueDate||"")}"></label><label>Estado<select class="d-status"><option value="open" ${d.status!=="closed"?"selected":""}>Abierto</option><option value="closed" ${d.status==="closed"?"selected":""}>Cerrado</option></select></label></div>${d.lastVerificationNote?`<div class="small muted" style="margin-top:8px"><strong>Última verificación:</strong> ${escapeHtml(d.lastVerified||"")} · ${escapeHtml(d.lastVerificationNote)}</div>`:""}<button class="btn primary save-dev" style="width:100%;margin-top:10px">Guardar seguimiento</button>`;div.querySelector(".save-dev").addEventListener("click",()=>{d.action=div.querySelector(".d-action").value.trim();d.responsible=div.querySelector(".d-resp").value.trim();d.dueDate=div.querySelector(".d-date").value;const ns=div.querySelector(".d-status").value;if(ns==="closed"&&d.status!=="closed")d.closedDate=todayLocal();if(ns==="open")d.closedDate="";d.status=ns;saveDeviations();renderDeviations();});w.appendChild(div);});
+  const w=document.getElementById("deviationList");if(!filtered.length){w.innerHTML='<div class="card"><p class="muted">No hay desvíos con este filtro.</p></div>';return;}w.innerHTML="";filtered.forEach(d=>{const div=document.createElement("div");div.className="card audit-card "+(d.status==="closed"?"status-ok":"status-bad");div.innerHTML=`<div class="row between"><div><span class="tag ${d.critical?"critical":""}">${escapeHtml(d.category||"General")}${d.critical?" · CRÍTICO":""}</span><br><strong>${escapeHtml(d.question)}</strong></div><span class="pill">${d.status==="closed"?"Cerrado":"Abierto"}</span></div><div class="small muted" style="margin-top:5px">${escapeHtml(d.sector)} · Detectado: ${escapeHtml(d.firstDetected||"")} · Visto ${d.timesSeen||1} vez/veces</div>${d.observation?`<div style="margin-top:7px">${escapeHtml(d.observation)}</div>`:""}${d.photo?`<img src="${d.photo}" class="photo-preview" alt="Evidencia">`:""}<div class="grid two" style="margin-top:10px"><label>Acción correctiva<textarea class="d-action" placeholder="Qué se va a hacer">${escapeHtml(d.action||"")}</textarea></label><label>Responsable<input class="d-resp" value="${escapeHtml(d.responsible||"")}" placeholder="Nombre / sector"></label><label>Fecha compromiso<input class="d-date" type="date" value="${escapeHtml(d.dueDate||"")}"></label><label>Estado<select class="d-status"><option value="open" ${d.status!=="closed"?"selected":""}>Abierto</option><option value="closed" ${d.status==="closed"?"selected":""}>Cerrado</option></select></label></div>${d.lastVerificationNote?`<div class="small muted" style="margin-top:8px"><strong>Última verificación:</strong> ${escapeHtml(d.lastVerified||"")} · ${escapeHtml(d.lastVerificationNote)}</div>`:""}<button class="btn primary save-dev" style="width:100%;margin-top:10px">Guardar seguimiento</button>`;div.querySelector(".save-dev").addEventListener("click",()=>{d.action=div.querySelector(".d-action").value.trim();d.responsible=div.querySelector(".d-resp").value.trim();d.dueDate=div.querySelector(".d-date").value;const ns=div.querySelector(".d-status").value;if(ns==="closed"&&d.status!=="closed")d.closedDate=todayLocal();if(ns==="open")d.closedDate="";d.status=ns;saveDeviations();cloudSyncSoon();renderDeviations();});w.appendChild(div);});
 }
 document.getElementById("devSectorFilter").addEventListener("change",renderDeviations);
 document.getElementById("devStatusFilter").addEventListener("change",renderDeviations);
@@ -1167,7 +1203,7 @@ document.getElementById("saveQuestions").addEventListener("click",()=>{
     critical:card.querySelector(".qe-critical").checked
   })).filter(q=>q.text);
   if(!vals.length){ alert("El sector debe tener al menos una pregunta."); return; }
-  config.sectors[sec]=vals;const good=Math.min(100,Math.max(2,Number(document.getElementById("goodThreshold").value)||90));const regular=Math.min(good-1,Math.max(1,Number(document.getElementById("regularThreshold").value)||75));config.thresholds={good,regular};saveConfig();refreshSectors();initAudit();alert("Preguntas y valoración guardadas.");
+  config.sectors[sec]=vals;const good=Math.min(100,Math.max(2,Number(document.getElementById("goodThreshold").value)||90));const regular=Math.min(good-1,Math.max(1,Number(document.getElementById("regularThreshold").value)||75));config.thresholds={good,regular};saveConfig();cloudPushCatalog().catch(console.error);refreshSectors();initAudit();alert("Preguntas y valoración guardadas.");
 });
 document.getElementById("addSector").addEventListener("click",()=>{
   const input=document.getElementById("newSectorName");
@@ -1179,12 +1215,12 @@ document.getElementById("addSector").addEventListener("click",()=>{
     {text:"Uso correcto de EPP",category:"EPP",detail:"Verificar uso según riesgo y tarea.",weight:2,critical:false},
     {text:"Condiciones seguras de máquinas/equipos",category:"Máquinas",detail:"Verificar resguardos, sensores e interbloqueos.",weight:3,critical:true}
   ];
-  saveConfig(); input.value=""; refreshSectors(); document.getElementById("editSector").value=name; renderQuestionEditor();
+  saveConfig(); cloudPushCatalog().catch(console.error); input.value=""; refreshSectors(); document.getElementById("editSector").value=name; renderQuestionEditor();
 });
 document.getElementById("deleteSector").addEventListener("click",()=>{
   const sec=document.getElementById("editSector").value;
   if(Object.keys(config.sectors).length<=1){ alert("Debe quedar al menos un sector."); return; }
-  if(confirm(`¿Eliminar el sector "${sec}"?`)){ delete config.sectors[sec]; saveConfig(); refreshSectors(); renderQuestionEditor(); initAudit(); }
+  if(confirm(`¿Eliminar el sector "${sec}"?`)){ delete config.sectors[sec]; saveConfig(); cloudPushCatalog().catch(console.error); refreshSectors(); renderQuestionEditor(); initAudit(); }
 });
 
 document.getElementById("exportData").addEventListener("click",()=>{
@@ -1201,12 +1237,122 @@ document.getElementById("importData").addEventListener("change",e=>{
     try{
       const d=JSON.parse(r.result);
       if(!d.config?.sectors || !Array.isArray(d.audits)) throw new Error();
-      config=normalizeConfig(d.config); audits=d.audits; deviations=Array.isArray(d.deviations)?d.deviations:[]; saveConfig(); saveAudits(); saveDeviations(); refreshSectors(); initAudit(); alert("Respaldo importado correctamente.");
+      config=normalizeConfig(d.config); audits=d.audits; deviations=Array.isArray(d.deviations)?d.deviations:[]; saveConfig(); saveAudits(); saveDeviations(); refreshSectors(); initAudit(); cloudSyncSoon(); alert("Respaldo importado correctamente.");
     }catch{ alert("El archivo de respaldo no es válido."); }
     e.target.value="";
   };
   r.readAsText(f);
 });
+
+
+const SUPABASE_URL='https://rhsczxuguyvingvimehf.supabase.co';
+const SUPABASE_KEY='sb_publishable_dgWEIrO2QTbs1YzMRb2qbQ_GhF7DLfu';
+const LS_CLOUD_SESSION='ehs_supabase_session_v1';
+let cloudSession=safeParse(localStorage.getItem(LS_CLOUD_SESSION),null);
+let cloudBusy=false;
+
+function cloudSaveSession(s){cloudSession=s;if(s)localStorage.setItem(LS_CLOUD_SESSION,JSON.stringify(s));else localStorage.removeItem(LS_CLOUD_SESSION);renderCloudState();}
+function cloudSetStatus(msg,type='ok'){
+  const dot=document.getElementById('cloudDot'),txt=document.getElementById('cloudStatusText'),detail=document.getElementById('cloudSyncMsg');
+  if(dot)dot.className='cloud-dot '+(type==='ok'?'ok':type==='warn'?'warn':'bad'); if(txt)txt.textContent=msg; if(detail)detail.textContent=msg;
+}
+function renderCloudState(){
+  const out=document.getElementById('cloudLoggedOut'),inn=document.getElementById('cloudLoggedIn');
+  if(!out||!inn)return;
+  out.classList.toggle('hidden',!!cloudSession); inn.classList.toggle('hidden',!cloudSession);
+  if(cloudSession){document.getElementById('cloudUserText').textContent=cloudSession.user?.email||'Usuario conectado';}
+}
+async function cloudAuthFetch(path,opts={}){
+  const headers={...(opts.headers||{}),'apikey':SUPABASE_KEY,'Content-Type':'application/json'};
+  const r=await fetch(SUPABASE_URL+path,{...opts,headers});
+  const txt=await r.text(); let data=null; try{data=txt?JSON.parse(txt):null}catch{data=txt}
+  if(!r.ok)throw new Error(data?.msg||data?.message||data?.error_description||('Error '+r.status)); return data;
+}
+async function cloudRefresh(){
+  if(!cloudSession?.refresh_token)return false;
+  try{
+    const d=await cloudAuthFetch('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:cloudSession.refresh_token})});
+    d.expires_at=Math.floor(Date.now()/1000)+(Number(d.expires_in)||3600); cloudSaveSession(d); return true;
+  }catch(e){cloudSaveSession(null);return false;}
+}
+async function cloudEnsureSession(){
+  if(!cloudSession)return false; const now=Math.floor(Date.now()/1000); if((cloudSession.expires_at||0)>now+90)return true; return cloudRefresh();
+}
+async function cloudRest(path,opts={}){
+  if(!(await cloudEnsureSession()))throw new Error('Sesión vencida. Volvé a iniciar sesión.');
+  const headers={...(opts.headers||{}),'apikey':SUPABASE_KEY,'Authorization':'Bearer '+cloudSession.access_token};
+  if(opts.body!==undefined)headers['Content-Type']='application/json';
+  const r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{...opts,headers});
+  const txt=await r.text(); let data=null; try{data=txt?JSON.parse(txt):null}catch{data=txt}
+  if(!r.ok)throw new Error(data?.message||data?.hint||('Error '+r.status)); return data;
+}
+async function cloudLogin(email,password){
+  const d=await cloudAuthFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
+  d.expires_at=Math.floor(Date.now()/1000)+(Number(d.expires_in)||3600); cloudSaveSession(d); return d;
+}
+async function cloudLogout(){
+  try{if(cloudSession?.access_token)await fetch(SUPABASE_URL+'/auth/v1/logout',{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+cloudSession.access_token}});}catch(e){}
+  cloudSaveSession(null);
+}
+function auditToRow(a){return {id:a.id,sector_name:a.sector,audit_date:a.fecha,shift:a.turno||null,auditor_name:a.auditor,companion_name:a.companion||null,shift_people:Number(a.shiftPeople)||0,score:Number(a.score)||0,rating:a.rating||ratingFor(a.score),bad_count:Number(a.bad)||0,general_obs:a.generalObs||'',answers:a.answers||[],created_at:a.createdAt||undefined};}
+function rowToAudit(r){return {id:r.id,sector:r.sector_name,fecha:r.audit_date,turno:r.shift||'',auditor:r.auditor_name,companion:r.companion_name||'',shiftPeople:Number(r.shift_people)||0,score:Number(r.score)||0,rating:r.rating||ratingFor(r.score),bad:Number(r.bad_count)||0,generalObs:r.general_obs||'',answers:Array.isArray(r.answers)?r.answers:[],createdAt:r.created_at};}
+function deviationToRow(d){return {id:d.id,sector_name:d.sector,question_text:d.question,category:d.category||'General',detail:d.detail||'',observation:d.observation||'',photo_path:d.photo||d.photo_path||null,critical:!!d.critical,first_detected:d.firstDetected||null,last_seen:d.lastSeen||null,times_seen:Number(d.timesSeen)||1,status:d.status||'open',action:d.action||'',responsible:d.responsible||'',due_date:d.dueDate||null,closed_date:d.closedDate||null,last_verified:d.lastVerified||null,last_verification_note:d.lastVerificationNote||''};}
+function rowToDeviation(r){return {id:r.id,sector:r.sector_name,question:r.question_text,category:r.category||'General',detail:r.detail||'',observation:r.observation||'',photo:r.photo_path||null,critical:!!r.critical,firstDetected:r.first_detected,lastSeen:r.last_seen,timesSeen:Number(r.times_seen)||1,status:r.status||'open',action:r.action||'',responsible:r.responsible||'',dueDate:r.due_date||'',closedDate:r.closed_date||'',lastVerified:r.last_verified||'',lastVerificationNote:r.last_verification_note||''};}
+async function cloudUpsert(table,rows){if(!rows.length)return; for(let i=0;i<rows.length;i+=20){await cloudRest(table+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows.slice(i,i+20))});}}
+async function cloudPushRecords(){
+  await cloudUpsert('audits',audits.map(auditToRow)); await cloudUpsert('deviations',deviations.map(deviationToRow));
+}
+async function cloudPullRecords(){
+  const ra=await cloudRest('audits?select=*&order=created_at.desc'); const rd=await cloudRest('deviations?select=*');
+  const amap=new Map(audits.map(a=>[String(a.id),a])); (ra||[]).map(rowToAudit).forEach(a=>amap.set(String(a.id),a)); audits=[...amap.values()].sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))); saveAudits();
+  const dmap=new Map(deviations.map(d=>[String(d.id),d])); (rd||[]).map(rowToDeviation).forEach(d=>dmap.set(String(d.id),d)); deviations=[...dmap.values()]; saveDeviations();
+}
+function ensureCatalogIds(){
+  config.cloudSectorIds=config.cloudSectorIds||{};
+  Object.keys(config.sectors).forEach(name=>{if(!isUuid(config.cloudSectorIds[name]))config.cloudSectorIds[name]=newId(); config.sectors[name]=config.sectors[name].map(q=>{q=normalizeQuestion(q); if(!isUuid(q.id))q.id=newId(); return q;});});
+}
+async function cloudPushCatalog(){
+  if(!cloudSession)return; ensureCatalogIds();
+  const sectors=Object.keys(config.sectors).map((name,i)=>({id:config.cloudSectorIds[name],name,sort_order:i,active:true}));
+  await cloudUpsert('sectors',sectors);
+  for(const name of Object.keys(config.sectors)){
+    const sid=config.cloudSectorIds[name]; await cloudRest('questions?sector_id=eq.'+sid,{method:'DELETE'});
+    const rows=config.sectors[name].map((q,i)=>({id:q.id,sector_id:sid,text:q.text,category:q.category||'General',detail:q.detail||'',weight:Number(q.weight)||1,critical:!!q.critical,sort_order:i,active:true}));
+    await cloudUpsert('questions',rows);
+  }
+  await cloudRest('app_settings?key=eq.score_thresholds',{method:'DELETE'});
+  await cloudRest('app_settings',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([{key:'score_thresholds',value:config.thresholds||{good:90,regular:75}}])});
+  saveConfig();
+}
+async function cloudPullCatalog(){
+  const sectors=await cloudRest('sectors?select=*&active=eq.true&order=sort_order.asc'); if(!sectors?.length)return false;
+  const questions=await cloudRest('questions?select=*&active=eq.true&order=sort_order.asc'); const settings=await cloudRest('app_settings?select=*&key=eq.score_thresholds');
+  const newS={},ids={}; sectors.forEach(s=>{ids[s.name]=s.id; newS[s.name]=(questions||[]).filter(q=>q.sector_id===s.id).map(q=>({id:q.id,text:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical}));});
+  config.sectors=newS; config.cloudSectorIds=ids; if(settings?.[0]?.value)config.thresholds=settings[0].value; saveConfig(); refreshSectors(); initAudit(); return true;
+}
+async function cloudFullSync(){
+  if(cloudBusy)return; cloudBusy=true; cloudSetStatus('Sincronizando…','warn');
+  try{
+    const remoteS=await cloudRest('sectors?select=id&limit=1');
+    if(remoteS?.length)await cloudPullCatalog(); else await cloudPushCatalog();
+    await cloudPushRecords(); await cloudPullRecords(); renderHistory(); renderDeviations(); renderCharts(); cloudSetStatus('Sincronizado','ok'); document.getElementById('cloudSyncMsg').textContent='Última sincronización: '+new Date().toLocaleString();
+  }catch(e){console.error(e);cloudSetStatus('Error de sincronización','bad');document.getElementById('cloudSyncMsg').textContent=e.message;}
+  finally{cloudBusy=false;}
+}
+function cloudSyncSoon(){if(cloudSession&&!cloudBusy)setTimeout(()=>cloudFullSync(),50);}
+async function cloudDeleteRow(table,id){if(!cloudSession||!id)return;try{await cloudRest(table+'?id=eq.'+encodeURIComponent(id),{method:'DELETE'});}catch(e){console.error(e);}}
+async function initCloud(){
+  renderCloudState(); if(cloudSession){if(await cloudEnsureSession()){renderCloudState();cloudFullSync();}else renderCloudState();}
+}
+
+document.getElementById('cloudLoginBtn').addEventListener('click',async()=>{
+  const email=document.getElementById('cloudEmail').value.trim(),password=document.getElementById('cloudPassword').value; const msg=document.getElementById('cloudLoginMsg');
+  if(!email||!password){msg.textContent='Ingresá email y contraseña.';return;} msg.textContent='Ingresando…';
+  try{await cloudLogin(email,password);document.getElementById('cloudPassword').value='';msg.textContent='';await cloudFullSync();}catch(e){msg.textContent='No se pudo iniciar sesión: '+e.message;}
+});
+document.getElementById('cloudOfflineBtn').addEventListener('click',()=>{document.getElementById('cloudPanel').classList.add('hidden');});
+document.getElementById('cloudSyncBtn').addEventListener('click',cloudFullSync);
+document.getElementById('cloudLogoutBtn').addEventListener('click',cloudLogout);
 
 window.addEventListener("beforeinstallprompt",e=>{
   e.preventDefault(); deferredPrompt=e;
@@ -1222,6 +1368,7 @@ document.getElementById("installBtn").addEventListener("click",async()=>{
 
 refreshSectors();
 initAudit();
+initCloud();
 if("serviceWorker" in navigator){
   window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 }

@@ -70,3 +70,12 @@ MEJORAS V8:
 
 VERSIÓN GITHUB RAÍZ:
 Subir los 6 archivos directamente al repositorio. Los iconos van sueltos, sin carpeta icons.
+
+
+MEJORAS V9 - SINCRONIZACION SUPABASE:
+- Inicio de sesión con email y contraseña.
+- Auditorías y desvíos sincronizados entre dispositivos.
+- Configuración de sectores y preguntas compartida online.
+- Sincronización automática luego de guardar cambios y botón manual.
+- Modo local disponible si no hay conexión.
+- Fotos comprimidas viajan dentro del registro sincronizado.
