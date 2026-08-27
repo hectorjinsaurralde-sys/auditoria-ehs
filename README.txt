@@ -79,3 +79,10 @@ MEJORAS V9 - SINCRONIZACION SUPABASE:
 - Sincronización automática luego de guardar cambios y botón manual.
 - Modo local disponible si no hay conexión.
 - Fotos comprimidas viajan dentro del registro sincronizado.
+
+
+MEJORAS V10:
+- Tablero de gestión mensual.
+- KPIs de auditorías, promedio, abiertos, cerrados y reincidencias.
+- Ranking por sector y comparación contra mes anterior.
+- Gráficos de abiertos/cerrados y resultado por categoría.

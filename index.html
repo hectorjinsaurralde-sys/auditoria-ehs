@@ -89,12 +89,20 @@
     .summary-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
     .summary-table th,.summary-table td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
     .summary-table th{color:var(--muted);font-size:12px;text-transform:uppercase}
+    .dash-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:12px}
+    .dash-kpi{border:1px solid var(--line);border-radius:15px;padding:12px;background:#fff;min-width:0}
+    .dash-kpi .v{font-size:27px;font-weight:900;line-height:1.05;margin-top:4px}.dash-kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:850}
+    .dash-kpi.good .v{color:var(--ok)}.dash-kpi.regular .v{color:#9a6700}.dash-kpi.bad .v{color:var(--bad)}
+    .rank-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}.rank-table th,.rank-table td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}.rank-table th{font-size:11px;text-transform:uppercase;color:var(--muted)}
+    .trend-up{color:#167c4b;font-weight:900}.trend-down{color:#b42318;font-weight:900}.trend-flat{color:#64748b;font-weight:900}
+    .dashboard-note{background:#eef8f7;border:1px solid #c7e8e4;color:#135f59;padding:10px 12px;border-radius:12px;font-size:12px;margin-top:10px}
 
     @media(max-width:650px){
       .grid.two{grid-template-columns:1fr}
       nav{top:69px}
       nav button{font-size:11px}
       main{padding-left:10px;padding-right:10px}
+      .dash-kpis{grid-template-columns:1fr 1fr}
     }
   </style>
 </head>
@@ -109,7 +117,7 @@
     <button data-page="history">Historial</button>
     <button data-page="deviations">Desvíos</button>
     <button data-page="settings">Preguntas</button>
-    <button data-page="charts">Gráficos</button>
+    <button data-page="charts">Tablero</button>
     <button data-page="backup">Respaldo</button>
   </nav>
 
@@ -240,25 +248,24 @@
 
     <section id="page-charts" class="page">
       <div class="card">
-        <div class="row between"><div><h2 class="section-title" style="margin-bottom:3px">Gráficos y avance</h2><div class="small muted">Visualizá la evolución del puntaje y el resultado mensual por sector auditado.</div></div></div>
-        <div class="grid two" style="margin-top:12px">
-          <label>Sector para evolución<select id="chartSectorFilter"><option value="">Todos</option></select></label>
-          <label>Mes para comparación por sector<select id="chartMonthFilter"><option value="">Seleccionar mes</option></select></label>
+        <div class="row between">
+          <div><h2 class="section-title" style="margin-bottom:3px">Tablero de gestión EHS</h2><div class="small muted">Resultado mensual, evolución, ranking, desvíos y reincidencias.</div></div>
+          <button class="btn secondary" id="refreshDashboard">Actualizar</button>
         </div>
+        <div class="grid two" style="margin-top:12px">
+          <label>Mes de gestión<select id="chartMonthFilter"><option value="">Seleccionar mes</option></select></label>
+          <label>Sector para evolución<select id="chartSectorFilter"><option value="">Todos</option></select></label>
+        </div>
+        <div class="dash-kpis" id="dashboardKpis"></div>
+        <div class="dashboard-note" id="dashboardInsight">El tablero se completa automáticamente con las auditorías guardadas.</div>
       </div>
       <div class="chart-grid">
-        <div class="chart-box">
-          <div class="row between"><div><strong>Evolución mensual del puntaje</strong><div class="chart-note">Promedio de auditorías por mes.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadTrendChart">Descargar gráfico</button></div></div>
-          <canvas id="trendChart" class="chart" width="900" height="280"></canvas>
-        </div>
-        <div class="chart-box">
-          <div class="row between"><div><strong>Resultado mensual por sector</strong><div class="chart-note">Comparación del mes seleccionado.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadMonthlyChart">Descargar gráfico</button></div></div>
-          <canvas id="monthlySectorChart" class="chart" width="900" height="320"></canvas>
-        </div>
-        <div class="chart-box">
-          <strong>Resumen mensual por sector</strong>
-          <div id="monthlySummaryTable"></div>
-        </div>
+        <div class="chart-box"><div class="row between"><div><strong>Ranking mensual por sector</strong><div class="chart-note">Promedio del mes y variación respecto del mes anterior.</div></div></div><div id="sectorRanking"></div></div>
+        <div class="chart-box"><div class="row between"><div><strong>Resultado mensual por sector</strong><div class="chart-note">Verde, amarillo o rojo según el promedio del sector.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadMonthlyChart">Descargar gráfico</button></div></div><canvas id="monthlySectorChart" class="chart" width="900" height="320"></canvas></div>
+        <div class="chart-box"><div class="row between"><div><strong>Evolución mensual del puntaje</strong><div class="chart-note">Elegí un sector o mirá el promedio general.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadTrendChart">Descargar gráfico</button></div></div><canvas id="trendChart" class="chart" width="900" height="280"></canvas></div>
+        <div class="chart-box"><div class="row between"><div><strong>Desvíos abiertos vs cerrados</strong><div class="chart-note">Estado actual de los hallazgos detectados en el mes seleccionado.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadDeviationChart">Descargar gráfico</button></div></div><canvas id="deviationChart" class="chart" width="900" height="250"></canvas></div>
+        <div class="chart-box"><div class="row between"><div><strong>Resultado por categoría</strong><div class="chart-note">Promedio de las categorías auditadas durante el mes.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadCategoryChart">Descargar gráfico</button></div></div><canvas id="categoryChart" class="chart" width="900" height="320"></canvas></div>
+        <div class="chart-box"><strong>Resumen mensual por sector</strong><div id="monthlySummaryTable"></div></div>
       </div>
     </section>
 
@@ -1117,29 +1124,38 @@ function renderHistory(){
 }
 
 
+
+function prevMonthKey(month){if(!month)return '';const [y,m]=month.split('-').map(Number);const d=new Date(Date.UTC(y,m-1,1));d.setUTCMonth(d.getUTCMonth()-1);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;}
+function auditsForMonth(month){return audits.filter(a=>(a.fecha||'').slice(0,7)===month);}
+function deviationCountsForMonth(month){const rows=deviations.filter(d=>(d.firstDetected||'').slice(0,7)===month);return {total:rows.length,open:rows.filter(d=>d.status!=='closed').length,closed:rows.filter(d=>d.status==='closed').length,recurrent:rows.filter(d=>(Number(d.timesSeen)||1)>1).length};}
+function sectorStats(month){const cur=auditsForMonth(month),prev=auditsForMonth(prevMonthKey(month));const names=[...new Set(cur.map(a=>a.sector))].sort();return names.map(name=>{const ca=cur.filter(a=>a.sector===name),pa=prev.filter(a=>a.sector===name),avg=average(ca.map(a=>a.score)),prevAvg=pa.length?average(pa.map(a=>a.score)):null,open=deviations.filter(d=>d.sector===name&&d.status!=='closed').length,recurrent=deviations.filter(d=>d.sector===name&&d.status!=='closed'&&(Number(d.timesSeen)||1)>1).length;return {name,count:ca.length,avg,prevAvg,delta:prevAvg===null?null:avg-prevAvg,open,recurrent,rating:ratingFromAvg(avg)};}).sort((a,b)=>b.avg-a.avg||a.name.localeCompare(b.name));}
+function categoryStats(month){const rows=auditsForMonth(month),agg={};rows.forEach(a=>(a.answers||[]).forEach(x=>{if(!x||!x.value||x.value==='na')return;const cat=x.category||'General',w=Number(x.weight)||1;agg[cat]=agg[cat]||{ok:0,total:0};agg[cat].total+=w;if(x.value==='ok')agg[cat].ok+=w;}));return Object.entries(agg).map(([name,v])=>({name,score:v.total?Math.round(v.ok/v.total*100):0})).sort((a,b)=>b.score-a.score);}
+function drawPercentBars(canvas,labels,values,colors){const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.font='12px Arial';if(!labels.length){ctx.fillStyle='#64748b';ctx.fillText('No hay datos para mostrar.',20,30);return;}const pad={l:52,r:18,t:20,b:70},gw=W-pad.l-pad.r,gh=H-pad.t-pad.b;ctx.strokeStyle='#d9e1e4';for(let i=0;i<=5;i++){const y=pad.t+gh-gh*i/5;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.fillStyle='#64748b';ctx.fillText(String(i*20),12,y+4);}const slot=gw/labels.length,bw=Math.min(75,slot*.55);labels.forEach((lab,i)=>{const v=Math.max(0,Math.min(100,Number(values[i])||0)),h=v*gh/100,x=pad.l+slot*i+(slot-bw)/2,y=pad.t+gh-h;ctx.fillStyle=colors[i]||'#0f766e';ctx.fillRect(x,y,bw,h);ctx.fillStyle='#334155';ctx.fillText(v+'%',x+bw/2-12,y-7);ctx.save();ctx.translate(x+bw/2,H-18);ctx.rotate(-.35);ctx.fillText(lab,0,0);ctx.restore();});}
+function drawCountBars(canvas,labels,values,colors){const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.font='14px Arial';if(!labels.length){ctx.fillStyle='#64748b';ctx.fillText('No hay datos para mostrar.',20,30);return;}const max=Math.max(1,...values),pad={l:55,r:20,t:25,b:45},gw=W-pad.l-pad.r,gh=H-pad.t-pad.b,slot=gw/labels.length,bw=Math.min(170,slot*.5);labels.forEach((lab,i)=>{const v=Number(values[i])||0,h=v*gh/max,x=pad.l+slot*i+(slot-bw)/2,y=pad.t+gh-h;ctx.fillStyle=colors[i];ctx.fillRect(x,y,bw,h);ctx.fillStyle='#334155';ctx.font='bold 20px Arial';ctx.fillText(String(v),x+bw/2-8,y-8);ctx.font='14px Arial';ctx.fillText(lab,x+bw/2-28,H-18);});}
+function renderRanking(month){const stats=sectorStats(month),wrap=document.getElementById('sectorRanking');if(!stats.length){wrap.innerHTML='<p class="muted">No hay auditorías en el mes seleccionado.</p>';return;}const rows=stats.map((s,i)=>{const t=s.delta===null?'—':s.delta>0?`▲ +${s.delta}`:s.delta<0?`▼ ${s.delta}`:'● 0',tc=s.delta===null?'trend-flat':s.delta>0?'trend-up':s.delta<0?'trend-down':'trend-flat';return `<tr><td><strong>${i+1}</strong></td><td>${escapeHtml(s.name)}</td><td>${s.count}</td><td><strong>${s.avg}%</strong></td><td><span class="rating ${ratingClass(s.rating)}">${ratingEmoji(s.rating)} ${s.rating}</span></td><td class="${tc}">${t}</td><td>${s.open}</td><td>${s.recurrent}</td></tr>`;}).join('');wrap.innerHTML=`<div style="overflow-x:auto"><table class="rank-table"><thead><tr><th>#</th><th>Sector</th><th>Aud.</th><th>Promedio</th><th>Resultado</th><th>Vs mes ant.</th><th>Abiertos</th><th>Reinc.</th></tr></thead><tbody>${rows}</tbody></table></div>`;}
+function renderDashboardKpis(month){const ma=auditsForMonth(month),avg=average(ma.map(a=>a.score)),res=ratingFromAvg(avg),dc=deviationCountsForMonth(month);document.getElementById('dashboardKpis').innerHTML=`<div class="dash-kpi"><div class="l">Auditorías del mes</div><div class="v">${ma.length}</div></div><div class="dash-kpi ${ratingClass(res)}"><div class="l">Promedio mensual</div><div class="v">${ma.length?avg+'%':'—'}</div><div class="small">${ma.length?ratingEmoji(res)+' '+res:''}</div></div><div class="dash-kpi bad"><div class="l">Desvíos abiertos</div><div class="v">${dc.open}</div></div><div class="dash-kpi good"><div class="l">Desvíos cerrados</div><div class="v">${dc.closed}</div></div><div class="dash-kpi regular"><div class="l">Reincidencias</div><div class="v">${dc.recurrent}</div></div>`;const ranking=sectorStats(month);let insight='Todavía no hay auditorías cargadas para este mes.';if(ranking.length){const best=ranking[0],worst=ranking[ranking.length-1];insight=`Mejor resultado: ${best.name} ${best.avg}%. Sector a priorizar: ${worst.name} ${worst.avg}%. ${dc.recurrent?`Hay ${dc.recurrent} desvío(s) reincidente(s) detectado(s) en el mes.`:'No hay reincidencias registradas en el mes.'}`;}document.getElementById('dashboardInsight').textContent=insight;}
 function renderCharts(){
   refreshSectors();
-  const monthSel=document.getElementById('chartMonthFilter');
-  const sectorSel=document.getElementById('chartSectorFilter');
+  const monthSel=document.getElementById('chartMonthFilter'),sectorSel=document.getElementById('chartSectorFilter');
   const months=[...new Set(audits.map(a=>(a.fecha||'').slice(0,7)).filter(Boolean))].sort();
-  const oldM=monthSel.value; monthSel.innerHTML=months.length?months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join(''):'<option value="">Sin datos</option>';
-  if(months.includes(oldM)) monthSel.value=oldM; else if(months.length) monthSel.value=months[months.length-1];
-  const sec=sectorSel.value||''; const selectedMonth=monthSel.value||'';
-  const trendSource=sec?audits.filter(a=>a.sector===sec):audits;
-  const grouped={}; trendSource.forEach(a=>{const m=(a.fecha||'').slice(0,7); if(!m) return; (grouped[m]=grouped[m]||[]).push(Number(a.score)||0);});
-  const trendMonths=Object.keys(grouped).sort();
-  const trendLabels=trendMonths.map(monthLabel); const trendValues=trendMonths.map(m=>average(grouped[m]));
-  drawLineChart(document.getElementById('trendChart'), trendLabels, trendValues);
-  const monthly=audits.filter(a=>(a.fecha||'').slice(0,7)===selectedMonth);
-  const sectors=[...new Set(monthly.map(a=>a.sector))].sort();
-  const sectorValues=sectors.map(sec=>average(monthly.filter(a=>a.sector===sec).map(a=>a.score)));
-  drawBarChart(document.getElementById('monthlySectorChart'), sectors, sectorValues);
-  document.getElementById('monthlySummaryTable').innerHTML=selectedMonth?buildMonthlySummary(selectedMonth):'<p class="muted">Sin datos.</p>';
+  const oldM=monthSel.value;monthSel.innerHTML=months.length?months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join(''):'<option value="">Sin datos</option>';
+  if(months.includes(oldM))monthSel.value=oldM;else if(months.length)monthSel.value=months[months.length-1];
+  const selectedMonth=monthSel.value||'',sec=sectorSel.value||'';
+  if(!selectedMonth){renderDashboardKpis('');renderRanking('');drawLineChart(document.getElementById('trendChart'),[],[]);drawBarChart(document.getElementById('monthlySectorChart'),[],[]);drawCountBars(document.getElementById('deviationChart'),[],[],[]);drawPercentBars(document.getElementById('categoryChart'),[],[],[]);document.getElementById('monthlySummaryTable').innerHTML='<p class="muted">Sin datos.</p>';return;}
+  renderDashboardKpis(selectedMonth);renderRanking(selectedMonth);
+  const trendSource=sec?audits.filter(a=>a.sector===sec):audits,grouped={};trendSource.forEach(a=>{const m=(a.fecha||'').slice(0,7);if(!m)return;(grouped[m]=grouped[m]||[]).push(Number(a.score)||0);});const trendMonths=Object.keys(grouped).sort();drawLineChart(document.getElementById('trendChart'),trendMonths.map(monthLabel),trendMonths.map(m=>average(grouped[m])));
+  const stats=sectorStats(selectedMonth);drawBarChart(document.getElementById('monthlySectorChart'),stats.map(s=>s.name),stats.map(s=>s.avg));
+  const dc=deviationCountsForMonth(selectedMonth);drawCountBars(document.getElementById('deviationChart'),['Abiertos','Cerrados'],[dc.open,dc.closed],['#ef4444','#16a34a']);
+  const cats=categoryStats(selectedMonth);drawPercentBars(document.getElementById('categoryChart'),cats.map(c=>c.name),cats.map(c=>c.score),cats.map(c=>{const r=ratingFromAvg(c.score);return r==='Bueno'?'#16a34a':r==='Regular'?'#eab308':'#ef4444';}));
+  document.getElementById('monthlySummaryTable').innerHTML=buildMonthlySummary(selectedMonth);
 }
 document.getElementById('chartSectorFilter').addEventListener('change',renderCharts);
 document.getElementById('chartMonthFilter').addEventListener('change',renderCharts);
-document.getElementById('downloadTrendChart').addEventListener('click',()=>downloadCanvas(document.getElementById('trendChart'),'grafico-evolucion.png'));
-document.getElementById('downloadMonthlyChart').addEventListener('click',()=>downloadCanvas(document.getElementById('monthlySectorChart'),'grafico-mensual-por-sector.png'));
+document.getElementById('refreshDashboard').addEventListener('click',async()=>{if(cloudSession){try{await cloudFullSync();}catch(e){console.error(e);}}renderCharts();});
+document.getElementById('downloadTrendChart').addEventListener('click',()=>downloadCanvas(document.getElementById('trendChart'),'evolucion-puntaje.png'));
+document.getElementById('downloadMonthlyChart').addEventListener('click',()=>downloadCanvas(document.getElementById('monthlySectorChart'),'resultado-mensual-sectores.png'));
+document.getElementById('downloadDeviationChart').addEventListener('click',()=>downloadCanvas(document.getElementById('deviationChart'),'desvios-abiertos-cerrados.png'));
+document.getElementById('downloadCategoryChart').addEventListener('click',()=>downloadCanvas(document.getElementById('categoryChart'),'resultado-por-categoria.png'));
 
 function renderDeviations(){
   refreshSectors();const sf=document.getElementById("devSectorFilter").value,stf=document.getElementById("devStatusFilter").value;const filtered=deviations.filter(d=>(!sf||d.sector===sf)&&(!stf||d.status===stf));const open=deviations.filter(d=>d.status!=="closed");document.getElementById("openDevCount").textContent=open.length+" abiertos";
