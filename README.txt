@@ -101,3 +101,10 @@ MEJORAS V12:
 - Fuerza actualización del ícono en Android/Chrome con nombres de archivo nuevos.
 - Agrega favicon y shortcut icon como respaldo para accesos directos.
 - Manifest actualizado con id, scope y propósitos any/maskable.
+
+
+MEJORAS V13:
+- Sincronización incremental: solo envía auditorías y desvíos nuevos o modificados.
+- Historial remoto se carga sin fotos/respuestas pesadas; el detalle se obtiene al abrir una auditoría.
+- Tiempo máximo de conexión y mensaje claro si la red falla.
+- Si Supabase falla, la auditoría queda guardada localmente y se puede reintentar luego.

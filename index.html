@@ -1656,11 +1656,14 @@ document.getElementById("saveAudit").addEventListener("click",()=>{
     rating:ratingFor(score),
     bad:answers.filter(a=>a.value==="bad").length,
     followups:JSON.parse(JSON.stringify(followupState)),
-    answers:JSON.parse(JSON.stringify(answers))
+    answers:JSON.parse(JSON.stringify(answers)),
+    createdAt:new Date().toISOString()
   };
   Object.entries(followupState).forEach(([id,st])=>{const d=deviations.find(x=>String(x.id)===String(id));if(!d||st.result==="pending")return;d.lastVerified=record.fecha;d.lastVerificationNote=st.note||"";if(st.result==="closed"){d.status="closed";d.closedDate=record.fecha;}else{d.status="open";d.lastSeen=record.fecha;}});
   answers.filter(a=>a.value==="bad").forEach(a=>{let d=deviations.find(x=>x.sector===sector&&x.status!=="closed"&&x.question===a.question);if(d){d.lastSeen=record.fecha;d.observation=a.obs||d.observation;if(a.photo)d.photo=a.photo;d.timesSeen=(d.timesSeen||1)+1;}else{deviations.unshift({id:newId(),sector,question:a.question,category:a.category||"General",detail:a.detail||"",observation:a.obs||"",photo:a.photo||null,critical:Boolean(a.critical),firstDetected:record.fecha,lastSeen:record.fecha,timesSeen:1,status:"open",action:"",responsible:"",dueDate:"",closedDate:"",lastVerified:"",lastVerificationNote:""});}});
   audits.unshift(record);followupState={};
+  cloudMarkAuditDirty(record.id);
+  deviations.filter(d=>d.lastSeen===record.fecha || d.lastVerified===record.fecha).forEach(d=>cloudMarkDeviationDirty(d.id));
   try{ saveAudits(); saveDeviations(); cloudSyncSoon(); }
   catch(e){
     audits.shift();
@@ -1772,10 +1775,11 @@ function renderHistory(){
         <button class="btn danger delete">Eliminar</button>
       </div>
       <div class="detail hidden"></div>`;
-    div.querySelector(".details").addEventListener("click",()=>{
+    div.querySelector(".details").addEventListener("click",async()=>{
       const det=div.querySelector(".detail");
       if(det.classList.contains("hidden")){
         det.classList.remove("hidden");
+        if((!a.answers||!a.answers.length)&&cloudSession){det.innerHTML='<div class="list-item muted">Cargando detalle…</div>';await cloudLoadAuditDetail(a);}
         det.innerHTML=`<div class="list-item"><strong>Contexto de auditoría</strong><div class="small">Acompañante: ${escapeHtml(a.companion||"No informado")} · Personas en el turno: ${Number(a.shiftPeople)||0}</div></div>`+(a.answers||[]).map((x,i)=>`
           <div class="list-item">
             <strong>${i+1}. ${escapeHtml(x.question)}</strong>
@@ -1833,7 +1837,7 @@ document.getElementById('downloadCategoryChart').addEventListener('click',()=>do
 function renderDeviations(){
   refreshSectors();const sf=document.getElementById("devSectorFilter").value,stf=document.getElementById("devStatusFilter").value;const filtered=deviations.filter(d=>(!sf||d.sector===sf)&&(!stf||d.status===stf));const open=deviations.filter(d=>d.status!=="closed");document.getElementById("openDevCount").textContent=open.length+" abiertos";
   const aa=sf?audits.filter(a=>a.sector===sf):audits,month=todayLocal().slice(0,7),avg=aa.length?Math.round(aa.reduce((x,a)=>x+(Number(a.score)||0),0)/aa.length):0,mc=aa.filter(a=>(a.fecha||"").slice(0,7)===month).length;document.getElementById("devMetrics").innerHTML=`<div class="metric"><span class="small muted">Puntaje promedio</span><strong>${avg}%</strong></div><div class="metric"><span class="small muted">Auditorías este mes</span><strong>${mc}</strong></div>`;
-  const w=document.getElementById("deviationList");if(!filtered.length){w.innerHTML='<div class="card"><p class="muted">No hay desvíos con este filtro.</p></div>';return;}w.innerHTML="";filtered.forEach(d=>{const div=document.createElement("div");div.className="card audit-card "+(d.status==="closed"?"status-ok":"status-bad");div.innerHTML=`<div class="row between"><div><span class="tag ${d.critical?"critical":""}">${escapeHtml(d.category||"General")}${d.critical?" · CRÍTICO":""}</span><br><strong>${escapeHtml(d.question)}</strong></div><span class="pill">${d.status==="closed"?"Cerrado":"Abierto"}</span></div><div class="small muted" style="margin-top:5px">${escapeHtml(d.sector)} · Detectado: ${escapeHtml(d.firstDetected||"")} · Visto ${d.timesSeen||1} vez/veces</div>${d.observation?`<div style="margin-top:7px">${escapeHtml(d.observation)}</div>`:""}${d.photo?`<img src="${d.photo}" class="photo-preview" alt="Evidencia">`:""}<div class="grid two" style="margin-top:10px"><label>Acción correctiva<textarea class="d-action" placeholder="Qué se va a hacer">${escapeHtml(d.action||"")}</textarea></label><label>Responsable<input class="d-resp" value="${escapeHtml(d.responsible||"")}" placeholder="Nombre / sector"></label><label>Fecha compromiso<input class="d-date" type="date" value="${escapeHtml(d.dueDate||"")}"></label><label>Estado<select class="d-status"><option value="open" ${d.status!=="closed"?"selected":""}>Abierto</option><option value="closed" ${d.status==="closed"?"selected":""}>Cerrado</option></select></label></div>${d.lastVerificationNote?`<div class="small muted" style="margin-top:8px"><strong>Última verificación:</strong> ${escapeHtml(d.lastVerified||"")} · ${escapeHtml(d.lastVerificationNote)}</div>`:""}<button class="btn primary save-dev" style="width:100%;margin-top:10px">Guardar seguimiento</button>`;div.querySelector(".save-dev").addEventListener("click",()=>{d.action=div.querySelector(".d-action").value.trim();d.responsible=div.querySelector(".d-resp").value.trim();d.dueDate=div.querySelector(".d-date").value;const ns=div.querySelector(".d-status").value;if(ns==="closed"&&d.status!=="closed")d.closedDate=todayLocal();if(ns==="open")d.closedDate="";d.status=ns;saveDeviations();cloudSyncSoon();renderDeviations();});w.appendChild(div);});
+  const w=document.getElementById("deviationList");if(!filtered.length){w.innerHTML='<div class="card"><p class="muted">No hay desvíos con este filtro.</p></div>';return;}w.innerHTML="";filtered.forEach(d=>{const div=document.createElement("div");div.className="card audit-card "+(d.status==="closed"?"status-ok":"status-bad");div.innerHTML=`<div class="row between"><div><span class="tag ${d.critical?"critical":""}">${escapeHtml(d.category||"General")}${d.critical?" · CRÍTICO":""}</span><br><strong>${escapeHtml(d.question)}</strong></div><span class="pill">${d.status==="closed"?"Cerrado":"Abierto"}</span></div><div class="small muted" style="margin-top:5px">${escapeHtml(d.sector)} · Detectado: ${escapeHtml(d.firstDetected||"")} · Visto ${d.timesSeen||1} vez/veces</div>${d.observation?`<div style="margin-top:7px">${escapeHtml(d.observation)}</div>`:""}${d.photo?`<img src="${d.photo}" class="photo-preview" alt="Evidencia">`:""}<div class="grid two" style="margin-top:10px"><label>Acción correctiva<textarea class="d-action" placeholder="Qué se va a hacer">${escapeHtml(d.action||"")}</textarea></label><label>Responsable<input class="d-resp" value="${escapeHtml(d.responsible||"")}" placeholder="Nombre / sector"></label><label>Fecha compromiso<input class="d-date" type="date" value="${escapeHtml(d.dueDate||"")}"></label><label>Estado<select class="d-status"><option value="open" ${d.status!=="closed"?"selected":""}>Abierto</option><option value="closed" ${d.status==="closed"?"selected":""}>Cerrado</option></select></label></div>${d.lastVerificationNote?`<div class="small muted" style="margin-top:8px"><strong>Última verificación:</strong> ${escapeHtml(d.lastVerified||"")} · ${escapeHtml(d.lastVerificationNote)}</div>`:""}<button class="btn primary save-dev" style="width:100%;margin-top:10px">Guardar seguimiento</button>`;div.querySelector(".save-dev").addEventListener("click",()=>{d.action=div.querySelector(".d-action").value.trim();d.responsible=div.querySelector(".d-resp").value.trim();d.dueDate=div.querySelector(".d-date").value;const ns=div.querySelector(".d-status").value;if(ns==="closed"&&d.status!=="closed")d.closedDate=todayLocal();if(ns==="open")d.closedDate="";d.status=ns;cloudMarkDeviationDirty(d.id);saveDeviations();cloudSyncSoon();renderDeviations();});w.appendChild(div);});
 }
 document.getElementById("devSectorFilter").addEventListener("change",renderDeviations);
 document.getElementById("devStatusFilter").addEventListener("change",renderDeviations);
@@ -1926,7 +1930,7 @@ document.getElementById("importData").addEventListener("change",e=>{
     try{
       const d=JSON.parse(r.result);
       if(!d.config?.sectors || !Array.isArray(d.audits)) throw new Error();
-      config=normalizeConfig(d.config); audits=d.audits; deviations=Array.isArray(d.deviations)?d.deviations:[]; saveConfig(); saveAudits(); saveDeviations(); refreshSectors(); initAudit(); cloudSyncSoon(); alert("Respaldo importado correctamente.");
+      config=normalizeConfig(d.config); audits=d.audits; deviations=Array.isArray(d.deviations)?d.deviations:[]; syncState.dirtyAudits=audits.map(a=>String(a.id)); syncState.dirtyDeviations=deviations.map(x=>String(x.id)); saveSyncState(); saveConfig(); saveAudits(); saveDeviations(); refreshSectors(); initAudit(); cloudSyncSoon(); alert("Respaldo importado correctamente.");
     }catch{ alert("El archivo de respaldo no es válido."); }
     e.target.value="";
   };
@@ -1937,8 +1941,14 @@ document.getElementById("importData").addEventListener("change",e=>{
 const SUPABASE_URL='https://rhsczxuguyvingvimehf.supabase.co';
 const SUPABASE_KEY='sb_publishable_dgWEIrO2QTbs1YzMRb2qbQ_GhF7DLfu';
 const LS_CLOUD_SESSION='ehs_supabase_session_v1';
+const LS_SYNC_STATE='ehs_sync_state_v13';
 let cloudSession=safeParse(localStorage.getItem(LS_CLOUD_SESSION),null);
 let cloudBusy=false;
+let cloudTimer=null;
+let syncState=safeParse(localStorage.getItem(LS_SYNC_STATE),{dirtyAudits:[],dirtyDeviations:[],lastPullAt:null});
+function saveSyncState(){localStorage.setItem(LS_SYNC_STATE,JSON.stringify(syncState));}
+function cloudMarkAuditDirty(id){if(id&&!syncState.dirtyAudits.includes(String(id))){syncState.dirtyAudits.push(String(id));saveSyncState();}}
+function cloudMarkDeviationDirty(id){if(id&&!syncState.dirtyDeviations.includes(String(id))){syncState.dirtyDeviations.push(String(id));saveSyncState();}}
 
 function cloudSaveSession(s){cloudSession=s;if(s)localStorage.setItem(LS_CLOUD_SESSION,JSON.stringify(s));else localStorage.removeItem(LS_CLOUD_SESSION);renderCloudState();}
 function cloudSetStatus(msg,type='ok'){
@@ -1951,106 +1961,86 @@ function renderCloudState(){
   out.classList.toggle('hidden',!!cloudSession); inn.classList.toggle('hidden',!cloudSession);
   if(cloudSession){document.getElementById('cloudUserText').textContent=cloudSession.user?.email||'Usuario conectado';}
 }
+async function fetchWithTimeout(url,opts={},timeoutMs=15000){
+  const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{return await fetch(url,{...opts,signal:controller.signal});}
+  catch(e){
+    if(e?.name==='AbortError')throw new Error('La conexión tardó demasiado. Los datos quedaron guardados en el dispositivo.');
+    throw new Error('No se pudo conectar con la nube. Revisá Internet y volvé a sincronizar.');
+  }finally{clearTimeout(timer);}
+}
 async function cloudAuthFetch(path,opts={}){
   const headers={...(opts.headers||{}),'apikey':SUPABASE_KEY,'Content-Type':'application/json'};
-  const r=await fetch(SUPABASE_URL+path,{...opts,headers});
+  const r=await fetchWithTimeout(SUPABASE_URL+path,{...opts,headers});
   const txt=await r.text(); let data=null; try{data=txt?JSON.parse(txt):null}catch{data=txt}
   if(!r.ok)throw new Error(data?.msg||data?.message||data?.error_description||('Error '+r.status)); return data;
 }
 async function cloudRefresh(){
   if(!cloudSession?.refresh_token)return false;
-  try{
-    const d=await cloudAuthFetch('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:cloudSession.refresh_token})});
-    d.expires_at=Math.floor(Date.now()/1000)+(Number(d.expires_in)||3600); cloudSaveSession(d); return true;
-  }catch(e){cloudSaveSession(null);return false;}
+  try{const d=await cloudAuthFetch('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:cloudSession.refresh_token})});d.expires_at=Math.floor(Date.now()/1000)+(Number(d.expires_in)||3600);cloudSaveSession(d);return true;}
+  catch(e){cloudSaveSession(null);return false;}
 }
-async function cloudEnsureSession(){
-  if(!cloudSession)return false; const now=Math.floor(Date.now()/1000); if((cloudSession.expires_at||0)>now+90)return true; return cloudRefresh();
-}
+async function cloudEnsureSession(){if(!cloudSession)return false;const now=Math.floor(Date.now()/1000);if((cloudSession.expires_at||0)>now+90)return true;return cloudRefresh();}
 async function cloudRest(path,opts={}){
   if(!(await cloudEnsureSession()))throw new Error('Sesión vencida. Volvé a iniciar sesión.');
-  const headers={...(opts.headers||{}),'apikey':SUPABASE_KEY,'Authorization':'Bearer '+cloudSession.access_token};
-  if(opts.body!==undefined)headers['Content-Type']='application/json';
-  const r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{...opts,headers});
-  const txt=await r.text(); let data=null; try{data=txt?JSON.parse(txt):null}catch{data=txt}
-  if(!r.ok)throw new Error(data?.message||data?.hint||('Error '+r.status)); return data;
+  const headers={...(opts.headers||{}),'apikey':SUPABASE_KEY,'Authorization':'Bearer '+cloudSession.access_token}; if(opts.body!==undefined)headers['Content-Type']='application/json';
+  const r=await fetchWithTimeout(SUPABASE_URL+'/rest/v1/'+path,{...opts,headers});
+  const txt=await r.text();let data=null;try{data=txt?JSON.parse(txt):null}catch{data=txt}
+  if(!r.ok)throw new Error(data?.message||data?.hint||('Error '+r.status));return data;
 }
-async function cloudLogin(email,password){
-  const d=await cloudAuthFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
-  d.expires_at=Math.floor(Date.now()/1000)+(Number(d.expires_in)||3600); cloudSaveSession(d); return d;
-}
-async function cloudLogout(){
-  try{if(cloudSession?.access_token)await fetch(SUPABASE_URL+'/auth/v1/logout',{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+cloudSession.access_token}});}catch(e){}
-  cloudSaveSession(null);
-}
-function auditToRow(a){return {id:a.id,sector_name:a.sector,audit_date:a.fecha,shift:a.turno||null,auditor_name:a.auditor,companion_name:a.companion||null,shift_people:Number(a.shiftPeople)||0,score:Number(a.score)||0,rating:a.rating||ratingFor(a.score),bad_count:Number(a.bad)||0,general_obs:a.generalObs||'',answers:a.answers||[],created_at:a.createdAt||undefined};}
-function rowToAudit(r){return {id:r.id,sector:r.sector_name,fecha:r.audit_date,turno:r.shift||'',auditor:r.auditor_name,companion:r.companion_name||'',shiftPeople:Number(r.shift_people)||0,score:Number(r.score)||0,rating:r.rating||ratingFor(r.score),bad:Number(r.bad_count)||0,generalObs:r.general_obs||'',answers:Array.isArray(r.answers)?r.answers:[],createdAt:r.created_at};}
-function deviationToRow(d){return {id:d.id,sector_name:d.sector,question_text:d.question,category:d.category||'General',detail:d.detail||'',observation:d.observation||'',photo_path:d.photo||d.photo_path||null,critical:!!d.critical,first_detected:d.firstDetected||null,last_seen:d.lastSeen||null,times_seen:Number(d.timesSeen)||1,status:d.status||'open',action:d.action||'',responsible:d.responsible||'',due_date:d.dueDate||null,closed_date:d.closedDate||null,last_verified:d.lastVerified||null,last_verification_note:d.lastVerificationNote||''};}
-function rowToDeviation(r){return {id:r.id,sector:r.sector_name,question:r.question_text,category:r.category||'General',detail:r.detail||'',observation:r.observation||'',photo:r.photo_path||null,critical:!!r.critical,firstDetected:r.first_detected,lastSeen:r.last_seen,timesSeen:Number(r.times_seen)||1,status:r.status||'open',action:r.action||'',responsible:r.responsible||'',dueDate:r.due_date||'',closedDate:r.closed_date||'',lastVerified:r.last_verified||'',lastVerificationNote:r.last_verification_note||''};}
-async function cloudUpsert(table,rows){if(!rows.length)return; for(let i=0;i<rows.length;i+=20){await cloudRest(table+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows.slice(i,i+20))});}}
+async function cloudLogin(email,password){const d=await cloudAuthFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});d.expires_at=Math.floor(Date.now()/1000)+(Number(d.expires_in)||3600);cloudSaveSession(d);return d;}
+async function cloudLogout(){try{if(cloudSession?.access_token)await fetchWithTimeout(SUPABASE_URL+'/auth/v1/logout',{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+cloudSession.access_token}},8000);}catch(e){}cloudSaveSession(null);}
+
+function auditToRow(a){return {id:a.id,sector_name:a.sector,audit_date:a.fecha,shift:a.turno||null,auditor_name:a.auditor,companion_name:a.companion||null,shift_people:Number(a.shiftPeople)||0,score:Number(a.score)||0,rating:a.rating||ratingFor(a.score),bad_count:Number(a.bad)||0,general_obs:a.generalObs||'',answers:a.answers||[],created_at:a.createdAt||new Date().toISOString()};}
+function rowToAuditMeta(r,existing){return {id:r.id,sector:r.sector_name,fecha:r.audit_date,turno:r.shift||'',auditor:r.auditor_name,companion:r.companion_name||'',shiftPeople:Number(r.shift_people)||0,score:Number(r.score)||0,rating:r.rating||ratingFor(r.score),bad:Number(r.bad_count)||0,generalObs:r.general_obs||'',answers:existing?.answers||[],createdAt:r.created_at,cloudDetailPending:!(existing?.answers?.length)};}
+function deviationToRow(d){return {id:d.id,sector_name:d.sector,question_text:d.question,category:d.category||'General',detail:d.detail||'',observation:d.observation||'',photo_path:(typeof d.photo==='string'&&!d.photo.startsWith('data:'))?d.photo:null,critical:!!d.critical,first_detected:d.firstDetected||null,last_seen:d.lastSeen||null,times_seen:Number(d.timesSeen)||1,status:d.status||'open',action:d.action||'',responsible:d.responsible||'',due_date:d.dueDate||null,closed_date:d.closedDate||null,last_verified:d.lastVerified||null,last_verification_note:d.lastVerificationNote||''};}
+function rowToDeviation(r,existing){return {id:r.id,sector:r.sector_name,question:r.question_text,category:r.category||'General',detail:r.detail||'',observation:r.observation||'',photo:existing?.photo||r.photo_path||null,critical:!!r.critical,firstDetected:r.first_detected,lastSeen:r.last_seen,timesSeen:Number(r.times_seen)||1,status:r.status||'open',action:r.action||'',responsible:r.responsible||'',dueDate:r.due_date||'',closedDate:r.closed_date||'',lastVerified:r.last_verified||'',lastVerificationNote:r.last_verification_note||''};}
+async function cloudUpsert(table,rows){if(!rows.length)return;for(let i=0;i<rows.length;i+=10){await cloudRest(table+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows.slice(i,i+10))});}}
 async function cloudPushRecords(){
-  await cloudUpsert('audits',audits.map(auditToRow)); await cloudUpsert('deviations',deviations.map(deviationToRow));
+  const dirtyA=new Set(syncState.dirtyAudits), dirtyD=new Set(syncState.dirtyDeviations);
+  const arows=audits.filter(a=>dirtyA.has(String(a.id))).map(auditToRow);
+  const drows=deviations.filter(d=>dirtyD.has(String(d.id))).map(deviationToRow);
+  if(arows.length){await cloudUpsert('audits',arows); syncState.dirtyAudits=syncState.dirtyAudits.filter(id=>!dirtyA.has(String(id)));}
+  if(drows.length){await cloudUpsert('deviations',drows); syncState.dirtyDeviations=syncState.dirtyDeviations.filter(id=>!dirtyD.has(String(id)));}
+  saveSyncState();
 }
 async function cloudPullRecords(){
-  const ra=await cloudRest('audits?select=*&order=created_at.desc'); const rd=await cloudRest('deviations?select=*');
-  const amap=new Map(audits.map(a=>[String(a.id),a])); (ra||[]).map(rowToAudit).forEach(a=>amap.set(String(a.id),a)); audits=[...amap.values()].sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))); saveAudits();
-  const dmap=new Map(deviations.map(d=>[String(d.id),d])); (rd||[]).map(rowToDeviation).forEach(d=>dmap.set(String(d.id),d)); deviations=[...dmap.values()]; saveDeviations();
+  const fields='id,sector_name,audit_date,shift,auditor_name,companion_name,shift_people,score,rating,bad_count,general_obs,created_at';
+  const ra=await cloudRest('audits?select='+encodeURIComponent(fields)+'&order=created_at.desc');
+  const rd=await cloudRest('deviations?select=id,sector_name,question_text,category,detail,observation,critical,first_detected,last_seen,times_seen,status,action,responsible,due_date,closed_date,last_verified,last_verification_note');
+  const amap=new Map(audits.map(a=>[String(a.id),a])); (ra||[]).forEach(r=>{const old=amap.get(String(r.id));amap.set(String(r.id),rowToAuditMeta(r,old));}); audits=[...amap.values()].sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));saveAudits();
+  const dmap=new Map(deviations.map(d=>[String(d.id),d]));(rd||[]).forEach(r=>{const old=dmap.get(String(r.id));dmap.set(String(r.id),rowToDeviation(r,old));});deviations=[...dmap.values()];saveDeviations();
+  syncState.lastPullAt=new Date().toISOString();saveSyncState();
 }
-function ensureCatalogIds(){
-  config.cloudSectorIds=config.cloudSectorIds||{};
-  Object.keys(config.sectors).forEach(name=>{if(!isUuid(config.cloudSectorIds[name]))config.cloudSectorIds[name]=newId(); config.sectors[name]=config.sectors[name].map(q=>{q=normalizeQuestion(q); if(!isUuid(q.id))q.id=newId(); return q;});});
+async function cloudLoadAuditDetail(a){
+  if(!a?.id || (a.answers&&a.answers.length))return a;
+  try{const rows=await cloudRest('audits?select=answers&id=eq.'+encodeURIComponent(a.id)+'&limit=1');if(rows?.[0]?.answers){a.answers=rows[0].answers;a.cloudDetailPending=false;saveAudits();}return a;}catch(e){console.error(e);return a;}
 }
+function ensureCatalogIds(){config.cloudSectorIds=config.cloudSectorIds||{};Object.keys(config.sectors).forEach(name=>{if(!isUuid(config.cloudSectorIds[name]))config.cloudSectorIds[name]=newId();config.sectors[name]=config.sectors[name].map(q=>{q=normalizeQuestion(q);if(!isUuid(q.id))q.id=newId();return q;});});}
 async function cloudPushCatalog(){
-  if(!cloudSession)return; ensureCatalogIds();
+  if(!cloudSession)return;ensureCatalogIds();
   const sectors=Object.keys(config.sectors).map((name,i)=>({id:config.cloudSectorIds[name],name,sort_order:i,active:true}));
-  const remote=await cloudRest('sectors?select=id,name');
-  const keep=new Set(sectors.map(s=>s.name));
-  for(const oldSector of (remote||[])){
-    if(!keep.has(oldSector.name)){
-      await cloudRest('questions?sector_id=eq.'+oldSector.id,{method:'DELETE'});
-      await cloudRest('sectors?id=eq.'+oldSector.id,{method:'DELETE'});
-    }
-  }
   await cloudUpsert('sectors',sectors);
-  for(const name of Object.keys(config.sectors)){
-    const sid=config.cloudSectorIds[name]; await cloudRest('questions?sector_id=eq.'+sid,{method:'DELETE'});
-    const rows=config.sectors[name].map((q,i)=>({id:q.id,sector_id:sid,text:q.text,category:q.category||'General',detail:q.detail||'',weight:Number(q.weight)||1,critical:!!q.critical,sort_order:i,active:true}));
-    await cloudUpsert('questions',rows);
-  }
+  for(const name of Object.keys(config.sectors)){const sid=config.cloudSectorIds[name];await cloudRest('questions?sector_id=eq.'+sid,{method:'DELETE'});const rows=config.sectors[name].map((q,i)=>({id:q.id,sector_id:sid,text:q.text,category:q.category||'General',detail:q.detail||'',weight:Number(q.weight)||1,critical:!!q.critical,sort_order:i,active:true}));await cloudUpsert('questions',rows);}
   await cloudRest('app_settings?key=in.(score_thresholds,catalog_version)',{method:'DELETE'});
-  await cloudRest('app_settings',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([
-    {key:'score_thresholds',value:config.thresholds||{good:90,regular:75}},
-    {key:'catalog_version',value:11}
-  ])});
-  config.catalogVersion=11;
-  saveConfig();
+  await cloudRest('app_settings',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([{key:'score_thresholds',value:config.thresholds||{good:90,regular:75}},{key:'catalog_version',value:Number(config.catalogVersion)||11}])});saveConfig();
 }
-async function cloudPullCatalog(){
-  const sectors=await cloudRest('sectors?select=*&active=eq.true&order=sort_order.asc'); if(!sectors?.length)return false;
-  const questions=await cloudRest('questions?select=*&active=eq.true&order=sort_order.asc'); const settings=await cloudRest('app_settings?select=*&key=eq.score_thresholds');
-  const newS={},ids={}; sectors.forEach(s=>{ids[s.name]=s.id; newS[s.name]=(questions||[]).filter(q=>q.sector_id===s.id).map(q=>({id:q.id,text:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical}));});
-  config.sectors=newS; config.cloudSectorIds=ids; config.catalogVersion=11; if(settings?.[0]?.value)config.thresholds=settings[0].value; saveConfig(); refreshSectors(); initAudit(); return true;
-}
+async function cloudPullCatalog(){const sectors=await cloudRest('sectors?select=*&active=eq.true&order=sort_order.asc');if(!sectors?.length)return false;const questions=await cloudRest('questions?select=*&active=eq.true&order=sort_order.asc');const settings=await cloudRest('app_settings?select=*&key=eq.score_thresholds');const newS={},ids={};sectors.forEach(s=>{ids[s.name]=s.id;newS[s.name]=(questions||[]).filter(q=>q.sector_id===s.id).map(q=>({id:q.id,text:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical}));});config.sectors=newS;config.cloudSectorIds=ids;if(settings?.[0]?.value)config.thresholds=settings[0].value;saveConfig();refreshSectors();initAudit();return true;}
 async function cloudFullSync(){
-  if(cloudBusy)return; cloudBusy=true; cloudSetStatus('Sincronizando…','warn');
+  if(cloudBusy)return;cloudBusy=true;cloudSetStatus('Sincronizando datos…','warn');
   try{
-    const remoteVersion=await cloudRest('app_settings?select=value&key=eq.catalog_version');
-    const rv=Number(remoteVersion?.[0]?.value||0);
-    const remoteS=await cloudRest('sectors?select=id&limit=1');
-    if(!remoteS?.length || rv<11){
-      await cloudPushCatalog();
-    }else{
-      await cloudPullCatalog();
-    }
-    await cloudPushRecords(); await cloudPullRecords(); renderHistory(); renderDeviations(); renderCharts(); cloudSetStatus('Sincronizado','ok'); document.getElementById('cloudSyncMsg').textContent='Última sincronización: '+new Date().toLocaleString();
-  }catch(e){console.error(e);cloudSetStatus('Error de sincronización','bad');document.getElementById('cloudSyncMsg').textContent=e.message;}
+    const remoteVersion=await cloudRest('app_settings?select=value&key=eq.catalog_version');const rv=Number(remoteVersion?.[0]?.value||0);const localVersion=Number(config.catalogVersion)||0;
+    if(!rv && localVersion){await cloudPushCatalog();}else if(rv>localVersion){await cloudPullCatalog();config.catalogVersion=rv;saveConfig();}
+    await cloudPushRecords();
+    await cloudPullRecords();
+    renderHistory();renderDeviations();renderCharts();
+    cloudSetStatus('Sincronizado','ok');document.getElementById('cloudSyncMsg').textContent='Última sincronización: '+new Date().toLocaleString();
+  }catch(e){console.error(e);cloudSetStatus('Guardado local · nube pendiente','warn');document.getElementById('cloudSyncMsg').textContent=e.message+' Podés seguir usando la app y reintentar después.';}
   finally{cloudBusy=false;}
 }
-function cloudSyncSoon(){if(cloudSession&&!cloudBusy)setTimeout(()=>cloudFullSync(),50);}
+function cloudSyncSoon(){if(!cloudSession)return;if(cloudTimer)clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>{cloudTimer=null;cloudFullSync();},1200);}
 async function cloudDeleteRow(table,id){if(!cloudSession||!id)return;try{await cloudRest(table+'?id=eq.'+encodeURIComponent(id),{method:'DELETE'});}catch(e){console.error(e);}}
-async function initCloud(){
-  renderCloudState(); if(cloudSession){if(await cloudEnsureSession()){renderCloudState();cloudFullSync();}else renderCloudState();}
-}
+async function initCloud(){renderCloudState();if(cloudSession){if(await cloudEnsureSession()){renderCloudState();cloudSyncSoon();}else renderCloudState();}}
 
 document.getElementById('cloudLoginBtn').addEventListener('click',async()=>{
   const email=document.getElementById('cloudEmail').value.trim(),password=document.getElementById('cloudPassword').value; const msg=document.getElementById('cloudLoginMsg');
