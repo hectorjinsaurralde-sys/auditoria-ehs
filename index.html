@@ -293,423 +293,1093 @@
 
 <script>
 const DEFAULT = {
-  catalogVersion: 6,
-  sectors: {
-  "Producción": [
-    {
-      "text": "¿Los pasillos de circulación se encuentran limpios, ordenados y libres de obstrucciones?",
-      "category": "Orden y limpieza",
-      "detail": "Verificar pasillos peatonales y accesos libres.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los espacios entre máquinas se encuentran limpios, ordenados y sin materiales fuera de lugar?",
-      "category": "Orden y limpieza",
-      "detail": "Verificar acumulación de materiales, scrap y obstáculos entre equipos.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los canastos de scrap se encuentran correctamente ubicados, identificados y sin desbordes?",
-      "category": "Orden y limpieza",
-      "detail": "Verificar ubicación, identificación, estado y nivel de carga.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los residuos se encuentran correctamente segregados en recipientes identificados?",
-      "category": "Residuos",
-      "detail": "Verificar segregación, identificación y ausencia de mezclas indebidas.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿El kit antiderrame se encuentra completo, identificado y accesible?",
-      "category": "Emergencias",
-      "detail": "Verificar disponibilidad de absorbentes, elementos de contención y señalización.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los extintores se encuentran visibles, señalizados y libres de obstrucciones?",
-      "category": "Emergencias",
-      "detail": "Verificar acceso libre, señalización y condición general.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los hidrantes se encuentran accesibles y libres de obstrucciones?",
-      "category": "Emergencias",
-      "detail": "Verificar que no existan materiales, pallets o equipos bloqueando el acceso.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Las salidas de emergencia se encuentran señalizadas y libres de obstrucciones?",
-      "category": "Emergencias",
-      "detail": "Verificar puertas, recorridos y accesos de evacuación.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los tableros eléctricos se encuentran cerrados, identificados y en buenas condiciones?",
-      "category": "Eléctrico",
-      "detail": "Verificar tapas, cerraduras, identificación y ausencia de daños visibles.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los tableros eléctricos y sus accesos se encuentran libres de obstrucciones?",
-      "category": "Eléctrico",
-      "detail": "Verificar espacio libre y acceso inmediato al tablero.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Se observan pérdidas de agua, aceite u otros fluidos?",
-      "category": "Condiciones del sector",
-      "detail": "Verificar pérdidas que puedan generar resbalones, deterioro o riesgo operativo.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Se observan goteras o filtraciones que puedan generar riesgos?",
-      "category": "Condiciones del sector",
-      "detail": "Verificar techos, cañerías y zonas con presencia de agua.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Las máquinas poseen sus protecciones y resguardos correctamente colocados?",
-      "category": "Máquinas",
-      "detail": "Verificar resguardos fijos y móviles en zonas de atrapamiento o contacto.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los micros de seguridad, switches, sensores e interbloqueos se encuentran operativos y sin anulaciones?",
-      "category": "Máquinas",
-      "detail": "Verificar dispositivos instalados, sin puenteos ni anulaciones visibles.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Las paradas de emergencia se encuentran accesibles, identificadas y operativas?",
-      "category": "Máquinas",
-      "detail": "Verificar ubicación, identificación y ausencia de obstrucciones.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los dispositivos de seguridad de las máquinas se encuentran completos y funcionando correctamente?",
-      "category": "Máquinas",
-      "detail": "Verificar dispositivos adicionales de protección y seguridad del equipo.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los elementos y accesorios de izaje se encuentran identificados y en condiciones seguras?",
-      "category": "Izaje",
-      "detail": "Verificar eslingas, grilletes, cadenas, ganchos y estado general.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿El lavaojos se encuentra accesible, identificado y en condiciones de uso?",
-      "category": "Emergencias",
-      "detail": "Verificar acceso, limpieza, señalización y condición general.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿El sector destinado a carga de baterías se encuentra señalizado, ordenado y en condiciones seguras?",
-      "category": "Carga de baterías",
-      "detail": "Verificar orden, ventilación, cables, cargadores y ausencia de obstrucciones.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los estándares, instructivos y cartelería de seguridad requeridos se encuentran disponibles y actualizados?",
-      "category": "Estándares",
-      "detail": "Verificar documentación visual, instructivos o estándares aplicables al sector.",
-      "weight": 1,
-      "critical": false
-    }
-  ],
-  "Talleres de Mantenimiento": [
-    {
-      "text": "¿Los extintores se encuentran visibles, señalizados y libres de obstrucciones?",
-      "category": "Emergencias",
-      "detail": "Verificar acceso libre y condición general.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los hidrantes se encuentran accesibles y libres de obstrucciones?",
-      "category": "Emergencias",
-      "detail": "Verificar acceso inmediato al equipo contra incendio.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿El kit antiderrame se encuentra completo, identificado y accesible?",
-      "category": "Emergencias",
-      "detail": "Verificar absorbentes, contención y disponibilidad.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los residuos se encuentran correctamente segregados e identificados?",
-      "category": "Residuos",
-      "detail": "Verificar recipientes, rótulos y ausencia de mezclas indebidas.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Las instalaciones eléctricas se encuentran en buenas condiciones?",
-      "category": "Eléctrico",
-      "detail": "Verificar cables, fichas, tomas, prolongaciones e instalaciones visibles.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los tableros eléctricos se encuentran cerrados, accesibles, sin daños y libres de obstrucciones?",
-      "category": "Eléctrico",
-      "detail": "Verificar estado físico, cierre, identificación y acceso.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los pasillos y vías de circulación se encuentran libres de materiales y obstáculos?",
-      "category": "Orden y limpieza",
-      "detail": "Verificar circulación peatonal y accesos a puestos de trabajo.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los bancos de trabajo se encuentran ordenados y en condiciones seguras?",
-      "category": "Orden y limpieza",
-      "detail": "Verificar herramientas, materiales y condiciones de la superficie de trabajo.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Se observan derrames de aceite, grasas u otros productos?",
-      "category": "Orden y limpieza",
-      "detail": "Verificar piso, equipos y zonas de mantenimiento.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿El lavaojos se encuentra accesible y en condiciones de uso?",
-      "category": "Emergencias",
-      "detail": "Verificar acceso, limpieza, señalización y funcionamiento visible.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los elementos y accesorios de izaje se encuentran identificados, inspeccionados y en condiciones seguras?",
-      "category": "Izaje",
-      "detail": "Verificar eslingas, cadenas, grilletes, ganchos y registros aplicables.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Las herramientas manuales se encuentran en condiciones seguras de uso?",
-      "category": "Herramientas",
-      "detail": "Verificar mangos, filos, deformaciones, desgaste y uso adecuado.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Las herramientas eléctricas se encuentran en buenas condiciones, con cables, fichas y protecciones adecuadas?",
-      "category": "Herramientas",
-      "detail": "Verificar integridad eléctrica y protecciones del equipo.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los trabajos que lo requieren cuentan con el permiso de trabajo correspondiente?",
-      "category": "Permisos de trabajo",
-      "detail": "Verificar permiso aplicable y condiciones definidas para la tarea.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los hierros, repuestos e insumos se encuentran correctamente almacenados?",
-      "category": "Almacenamiento",
-      "detail": "Verificar estabilidad, orden y ausencia de elementos sobresalientes o inestables.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los productos químicos se encuentran identificados, cerrados y almacenados correctamente?",
-      "category": "Productos químicos",
-      "detail": "Verificar rótulos, envases, cierres y almacenamiento seguro.",
-      "weight": 1,
-      "critical": false
-    }
-  ],
-  "Logística / Expedición": [
-    {
-      "text": "¿Los extintores se encuentran visibles, señalizados y libres de obstrucciones?",
-      "category": "Emergencias",
-      "detail": "Verificar acceso libre y señalización.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los hidrantes se encuentran accesibles y libres de obstrucciones?",
-      "category": "Emergencias",
-      "detail": "Verificar que pallets, equipos o materiales no bloqueen el acceso.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los espejos parabólicos se encuentran correctamente ubicados, limpios y en buenas condiciones?",
-      "category": "Circulación",
-      "detail": "Verificar visibilidad en cruces y esquinas de circulación.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿El sector de carga de baterías se encuentra correctamente señalizado, ventilado, ordenado y libre de fuentes de ignición?",
-      "category": "Carga de baterías",
-      "detail": "Verificar cargadores, cables, orden, ventilación y señalización.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿El sector se encuentra limpio, ordenado y sin materiales fuera de los lugares establecidos?",
-      "category": "Orden y limpieza",
-      "detail": "Verificar piso, zonas de espera, pasillos y áreas de almacenamiento.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los materiales almacenados en racks se encuentran correctamente ubicados y dentro de los límites establecidos?",
-      "category": "Almacenamiento",
-      "detail": "Verificar ubicación, estabilidad, alturas y condiciones del material.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los racks se encuentran sin daños visibles y en condiciones seguras?",
-      "category": "Almacenamiento",
-      "detail": "Verificar montantes, largueros, protecciones y deformaciones visibles.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los autoelevadores se encuentran en condiciones seguras de operación?",
-      "category": "Equipos móviles",
-      "detail": "Verificar condición general, señalización, luces, ruedas y elementos de seguridad.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Las zorras eléctricas y apiladores se encuentran en condiciones seguras de operación?",
-      "category": "Equipos móviles",
-      "detail": "Verificar condición general y dispositivos de seguridad.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los camioneros y transportistas utilizan chaleco reflectivo dentro de las áreas establecidas?",
-      "category": "Circulación",
-      "detail": "Verificar cumplimiento durante permanencia y circulación en el sector.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Se realiza y registra el checklist previo al uso de los autoelevadores?",
-      "category": "Equipos móviles",
-      "detail": "Verificar registro previo al uso y tratamiento de anomalías detectadas.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Las vías de circulación peatonal y vehicular se encuentran libres de obstáculos?",
-      "category": "Circulación",
-      "detail": "Verificar sendas, cruces, portones y recorridos de equipos móviles.",
-      "weight": 1,
-      "critical": false
-    }
-  ],
-  "Áreas Exteriores": [
-    {
-      "text": "¿Las calles internas se encuentran limpias, ordenadas y libres de obstáculos?",
-      "category": "Orden y limpieza",
-      "detail": "Verificar circulación vehicular y presencia de materiales o residuos.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los pasillos y sendas peatonales exteriores se encuentran libres y correctamente delimitados?",
-      "category": "Orden y limpieza",
-      "detail": "Verificar recorrido peatonal, demarcación y obstáculos.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los contenedores de residuos se encuentran identificados, correctamente ubicados y sin desbordes?",
-      "category": "Residuos",
-      "detail": "Verificar identificación, estado, cierre y nivel de carga.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿El entorno de los contenedores se encuentra limpio y libre de residuos dispersos?",
-      "category": "Residuos",
-      "detail": "Verificar limpieza perimetral y ausencia de residuos en piso.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los perímetros de edificios, depósitos y sectores se encuentran limpios y sin acumulación de materiales?",
-      "category": "Perímetros",
-      "detail": "Verificar acumulaciones, maleza, obstrucciones y almacenamiento no previsto.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los extintores exteriores se encuentran visibles y libres de obstrucciones?",
-      "category": "Emergencias",
-      "detail": "Verificar acceso y señalización.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los hidrantes se encuentran accesibles y libres de obstrucciones?",
-      "category": "Emergencias",
-      "detail": "Verificar acceso libre en todo momento.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Las salidas de emergencia exteriores y sus recorridos permanecen libres?",
-      "category": "Emergencias",
-      "detail": "Verificar apertura, acceso y recorrido exterior de evacuación.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los sectores de almacenamiento exterior se encuentran ordenados y correctamente delimitados?",
-      "category": "Almacenamiento",
-      "detail": "Verificar delimitación, estabilidad y orden del material almacenado.",
-      "weight": 1,
-      "critical": false
-    },
-    {
-      "text": "¿Los materiales almacenados temporalmente se encuentran ubicados de manera segura y sin interferir con circulaciones, equipos de emergencia o accesos?",
-      "category": "Almacenamiento",
-      "detail": "Verificar que no obstruyan calles, sendas, hidrantes, extintores o salidas.",
-      "weight": 1,
-      "critical": false
-    }
-  ]
-}
+  "catalogVersion": 11,
+  "sectors": {
+    "Producción · Polipapel": [
+      {
+        "text": "¿Los pasillos principales se encuentran limpios, ordenados y libres de obstrucciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar materiales, pallets, scrap, residuos u otros elementos que invadan la circulación.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los espacios y pasillos entre máquinas se encuentran ordenados, limpios y sin derrames o acumulaciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar scrap, materiales, aceite, agua, residuos y elementos fuera de lugar.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos y el scrap se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, identificación, recipientes adecuados, mezclas indebidas y desbordes.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia se encuentran visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar que nada impida el acceso a equipos de emergencia ni las vías de evacuación.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los tableros eléctricos se encuentran cerrados, en condiciones seguras y con sus accesos libres?",
+        "category": "Eléctrico",
+        "detail": "Verificar puertas cerradas, ausencia de daños evidentes y materiales que obstruyan el acceso.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las protecciones y dispositivos de seguridad de las máquinas se encuentran colocados y sin anomalías evidentes?",
+        "category": "Máquinas y equipos",
+        "detail": "Observar guardas, micros, switches, sensores, interbloqueos y paradas de emergencia; sin anulaciones o puenteos visibles.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los productos químicos se encuentran identificados, cerrados y con contención adecuada?",
+        "category": "Productos químicos",
+        "detail": "Verificar identificación, estado del envase, bandeja o contención y almacenamiento. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los kits antiderrame y lavaojos, cuando correspondan, se encuentran accesibles y en condiciones de uso?",
+        "category": "Emergencias",
+        "detail": "Verificar kit disponible y completo, materiales absorbentes presentes y lavaojos accesible. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se observa el uso de anteojos de seguridad donde se encuentran requeridos?",
+        "category": "EPP y comportamiento",
+        "detail": "Realizar una observación general durante la recorrida, sin convertirla en una auditoría individual.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se utiliza protección auditiva en los sectores donde se encuentra establecida?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar el uso general durante la recorrida. Marcar N/A donde no corresponda.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observan comportamientos seguros, sin actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar uso de celular, atajos, circulación, intervención de equipos, exposición innecesaria u otras conductas inseguras.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Producción · Encartonado": [
+      {
+        "text": "¿Los pasillos principales se encuentran limpios, ordenados y libres de obstrucciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar materiales, pallets, scrap, residuos u otros elementos que invadan la circulación.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los espacios y pasillos entre máquinas se encuentran ordenados, limpios y sin derrames o acumulaciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar scrap, materiales, aceite, agua, residuos y elementos fuera de lugar.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos y el scrap se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, identificación, recipientes adecuados, mezclas indebidas y desbordes.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia se encuentran visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar que nada impida el acceso a equipos de emergencia ni las vías de evacuación.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los tableros eléctricos se encuentran cerrados, en condiciones seguras y con sus accesos libres?",
+        "category": "Eléctrico",
+        "detail": "Verificar puertas cerradas, ausencia de daños evidentes y materiales que obstruyan el acceso.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las protecciones y dispositivos de seguridad de las máquinas se encuentran colocados y sin anomalías evidentes?",
+        "category": "Máquinas y equipos",
+        "detail": "Observar guardas, micros, switches, sensores, interbloqueos y paradas de emergencia; sin anulaciones o puenteos visibles.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los productos químicos se encuentran identificados, cerrados y con contención adecuada?",
+        "category": "Productos químicos",
+        "detail": "Verificar identificación, estado del envase, bandeja o contención y almacenamiento. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los kits antiderrame y lavaojos, cuando correspondan, se encuentran accesibles y en condiciones de uso?",
+        "category": "Emergencias",
+        "detail": "Verificar kit disponible y completo, materiales absorbentes presentes y lavaojos accesible. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se observa el uso de anteojos de seguridad donde se encuentran requeridos?",
+        "category": "EPP y comportamiento",
+        "detail": "Realizar una observación general durante la recorrida, sin convertirla en una auditoría individual.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se utiliza protección auditiva en los sectores donde se encuentra establecida?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar el uso general durante la recorrida. Marcar N/A donde no corresponda.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observan comportamientos seguros, sin actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar uso de celular, atajos, circulación, intervención de equipos, exposición innecesaria u otras conductas inseguras.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Producción · Mezcla": [
+      {
+        "text": "¿Los pasillos principales se encuentran limpios, ordenados y libres de obstrucciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar materiales, pallets, scrap, residuos u otros elementos que invadan la circulación.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los espacios y pasillos entre máquinas se encuentran ordenados, limpios y sin derrames o acumulaciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar scrap, materiales, aceite, agua, residuos y elementos fuera de lugar.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos y el scrap se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, identificación, recipientes adecuados, mezclas indebidas y desbordes.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia se encuentran visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar que nada impida el acceso a equipos de emergencia ni las vías de evacuación.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los tableros eléctricos se encuentran cerrados, en condiciones seguras y con sus accesos libres?",
+        "category": "Eléctrico",
+        "detail": "Verificar puertas cerradas, ausencia de daños evidentes y materiales que obstruyan el acceso.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las protecciones y dispositivos de seguridad de las máquinas se encuentran colocados y sin anomalías evidentes?",
+        "category": "Máquinas y equipos",
+        "detail": "Observar guardas, micros, switches, sensores, interbloqueos y paradas de emergencia; sin anulaciones o puenteos visibles.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los productos químicos se encuentran identificados, cerrados y con contención adecuada?",
+        "category": "Productos químicos",
+        "detail": "Verificar identificación, estado del envase, bandeja o contención y almacenamiento. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los kits antiderrame y lavaojos, cuando correspondan, se encuentran accesibles y en condiciones de uso?",
+        "category": "Emergencias",
+        "detail": "Verificar kit disponible y completo, materiales absorbentes presentes y lavaojos accesible. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se observa el uso de anteojos de seguridad donde se encuentran requeridos?",
+        "category": "EPP y comportamiento",
+        "detail": "Realizar una observación general durante la recorrida, sin convertirla en una auditoría individual.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se utiliza protección auditiva en los sectores donde se encuentra establecida?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar el uso general durante la recorrida. Marcar N/A donde no corresponda.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observan comportamientos seguros, sin actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar uso de celular, atajos, circulación, intervención de equipos, exposición innecesaria u otras conductas inseguras.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Producción · Extrusión": [
+      {
+        "text": "¿Los pasillos principales se encuentran limpios, ordenados y libres de obstrucciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar materiales, pallets, scrap, residuos u otros elementos que invadan la circulación.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los espacios y pasillos entre máquinas se encuentran ordenados, limpios y sin derrames o acumulaciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar scrap, materiales, aceite, agua, residuos y elementos fuera de lugar.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos y el scrap se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, identificación, recipientes adecuados, mezclas indebidas y desbordes.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia se encuentran visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar que nada impida el acceso a equipos de emergencia ni las vías de evacuación.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los tableros eléctricos se encuentran cerrados, en condiciones seguras y con sus accesos libres?",
+        "category": "Eléctrico",
+        "detail": "Verificar puertas cerradas, ausencia de daños evidentes y materiales que obstruyan el acceso.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las protecciones y dispositivos de seguridad de las máquinas se encuentran colocados y sin anomalías evidentes?",
+        "category": "Máquinas y equipos",
+        "detail": "Observar guardas, micros, switches, sensores, interbloqueos y paradas de emergencia; sin anulaciones o puenteos visibles.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los productos químicos se encuentran identificados, cerrados y con contención adecuada?",
+        "category": "Productos químicos",
+        "detail": "Verificar identificación, estado del envase, bandeja o contención y almacenamiento. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los kits antiderrame y lavaojos, cuando correspondan, se encuentran accesibles y en condiciones de uso?",
+        "category": "Emergencias",
+        "detail": "Verificar kit disponible y completo, materiales absorbentes presentes y lavaojos accesible. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se observa el uso de anteojos de seguridad donde se encuentran requeridos?",
+        "category": "EPP y comportamiento",
+        "detail": "Realizar una observación general durante la recorrida, sin convertirla en una auditoría individual.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se utiliza protección auditiva en los sectores donde se encuentra establecida?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar el uso general durante la recorrida. Marcar N/A donde no corresponda.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observan comportamientos seguros, sin actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar uso de celular, atajos, circulación, intervención de equipos, exposición innecesaria u otras conductas inseguras.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Producción · Molino": [
+      {
+        "text": "¿Los pasillos principales se encuentran limpios, ordenados y libres de obstrucciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar materiales, pallets, scrap, residuos u otros elementos que invadan la circulación.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los espacios y pasillos entre máquinas se encuentran ordenados, limpios y sin derrames o acumulaciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar scrap, materiales, aceite, agua, residuos y elementos fuera de lugar.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos y el scrap se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, identificación, recipientes adecuados, mezclas indebidas y desbordes.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia se encuentran visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar que nada impida el acceso a equipos de emergencia ni las vías de evacuación.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los tableros eléctricos se encuentran cerrados, en condiciones seguras y con sus accesos libres?",
+        "category": "Eléctrico",
+        "detail": "Verificar puertas cerradas, ausencia de daños evidentes y materiales que obstruyan el acceso.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las protecciones y dispositivos de seguridad de las máquinas se encuentran colocados y sin anomalías evidentes?",
+        "category": "Máquinas y equipos",
+        "detail": "Observar guardas, micros, switches, sensores, interbloqueos y paradas de emergencia; sin anulaciones o puenteos visibles.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los productos químicos se encuentran identificados, cerrados y con contención adecuada?",
+        "category": "Productos químicos",
+        "detail": "Verificar identificación, estado del envase, bandeja o contención y almacenamiento. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los kits antiderrame y lavaojos, cuando correspondan, se encuentran accesibles y en condiciones de uso?",
+        "category": "Emergencias",
+        "detail": "Verificar kit disponible y completo, materiales absorbentes presentes y lavaojos accesible. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se observa el uso de anteojos de seguridad donde se encuentran requeridos?",
+        "category": "EPP y comportamiento",
+        "detail": "Realizar una observación general durante la recorrida, sin convertirla en una auditoría individual.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se utiliza protección auditiva en los sectores donde se encuentra establecida?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar el uso general durante la recorrida. Marcar N/A donde no corresponda.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observan comportamientos seguros, sin actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar uso de celular, atajos, circulación, intervención de equipos, exposición innecesaria u otras conductas inseguras.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Producción · Impresión": [
+      {
+        "text": "¿Los pasillos principales se encuentran limpios, ordenados y libres de obstrucciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar materiales, pallets, scrap, residuos u otros elementos que invadan la circulación.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los espacios y pasillos entre máquinas se encuentran ordenados, limpios y sin derrames o acumulaciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar scrap, materiales, aceite, agua, residuos y elementos fuera de lugar.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos y el scrap se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, identificación, recipientes adecuados, mezclas indebidas y desbordes.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia se encuentran visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar que nada impida el acceso a equipos de emergencia ni las vías de evacuación.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los tableros eléctricos se encuentran cerrados, en condiciones seguras y con sus accesos libres?",
+        "category": "Eléctrico",
+        "detail": "Verificar puertas cerradas, ausencia de daños evidentes y materiales que obstruyan el acceso.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las protecciones y dispositivos de seguridad de las máquinas se encuentran colocados y sin anomalías evidentes?",
+        "category": "Máquinas y equipos",
+        "detail": "Observar guardas, micros, switches, sensores, interbloqueos y paradas de emergencia; sin anulaciones o puenteos visibles.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los productos químicos se encuentran identificados, cerrados y con contención adecuada?",
+        "category": "Productos químicos",
+        "detail": "Verificar identificación, estado del envase, bandeja o contención y almacenamiento. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los kits antiderrame y lavaojos, cuando correspondan, se encuentran accesibles y en condiciones de uso?",
+        "category": "Emergencias",
+        "detail": "Verificar kit disponible y completo, materiales absorbentes presentes y lavaojos accesible. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se observa el uso de anteojos de seguridad donde se encuentran requeridos?",
+        "category": "EPP y comportamiento",
+        "detail": "Realizar una observación general durante la recorrida, sin convertirla en una auditoría individual.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se utiliza protección auditiva en los sectores donde se encuentra establecida?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar el uso general durante la recorrida. Marcar N/A donde no corresponda.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observan comportamientos seguros, sin actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar uso de celular, atajos, circulación, intervención de equipos, exposición innecesaria u otras conductas inseguras.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Producción · Moldeo Pote": [
+      {
+        "text": "¿Los pasillos principales se encuentran limpios, ordenados y libres de obstrucciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar materiales, pallets, scrap, residuos u otros elementos que invadan la circulación.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los espacios y pasillos entre máquinas se encuentran ordenados, limpios y sin derrames o acumulaciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar scrap, materiales, aceite, agua, residuos y elementos fuera de lugar.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos y el scrap se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, identificación, recipientes adecuados, mezclas indebidas y desbordes.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia se encuentran visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar que nada impida el acceso a equipos de emergencia ni las vías de evacuación.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los tableros eléctricos se encuentran cerrados, en condiciones seguras y con sus accesos libres?",
+        "category": "Eléctrico",
+        "detail": "Verificar puertas cerradas, ausencia de daños evidentes y materiales que obstruyan el acceso.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las protecciones y dispositivos de seguridad de las máquinas se encuentran colocados y sin anomalías evidentes?",
+        "category": "Máquinas y equipos",
+        "detail": "Observar guardas, micros, switches, sensores, interbloqueos y paradas de emergencia; sin anulaciones o puenteos visibles.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los productos químicos se encuentran identificados, cerrados y con contención adecuada?",
+        "category": "Productos químicos",
+        "detail": "Verificar identificación, estado del envase, bandeja o contención y almacenamiento. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los kits antiderrame y lavaojos, cuando correspondan, se encuentran accesibles y en condiciones de uso?",
+        "category": "Emergencias",
+        "detail": "Verificar kit disponible y completo, materiales absorbentes presentes y lavaojos accesible. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se observa el uso de anteojos de seguridad donde se encuentran requeridos?",
+        "category": "EPP y comportamiento",
+        "detail": "Realizar una observación general durante la recorrida, sin convertirla en una auditoría individual.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se utiliza protección auditiva en los sectores donde se encuentra establecida?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar el uso general durante la recorrida. Marcar N/A donde no corresponda.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observan comportamientos seguros, sin actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar uso de celular, atajos, circulación, intervención de equipos, exposición innecesaria u otras conductas inseguras.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Producción · Moldeo Nave Nueva": [
+      {
+        "text": "¿Los pasillos principales se encuentran limpios, ordenados y libres de obstrucciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar materiales, pallets, scrap, residuos u otros elementos que invadan la circulación.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los espacios y pasillos entre máquinas se encuentran ordenados, limpios y sin derrames o acumulaciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar scrap, materiales, aceite, agua, residuos y elementos fuera de lugar.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos y el scrap se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, identificación, recipientes adecuados, mezclas indebidas y desbordes.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia se encuentran visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar que nada impida el acceso a equipos de emergencia ni las vías de evacuación.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los tableros eléctricos se encuentran cerrados, en condiciones seguras y con sus accesos libres?",
+        "category": "Eléctrico",
+        "detail": "Verificar puertas cerradas, ausencia de daños evidentes y materiales que obstruyan el acceso.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las protecciones y dispositivos de seguridad de las máquinas se encuentran colocados y sin anomalías evidentes?",
+        "category": "Máquinas y equipos",
+        "detail": "Observar guardas, micros, switches, sensores, interbloqueos y paradas de emergencia; sin anulaciones o puenteos visibles.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los productos químicos se encuentran identificados, cerrados y con contención adecuada?",
+        "category": "Productos químicos",
+        "detail": "Verificar identificación, estado del envase, bandeja o contención y almacenamiento. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los kits antiderrame y lavaojos, cuando correspondan, se encuentran accesibles y en condiciones de uso?",
+        "category": "Emergencias",
+        "detail": "Verificar kit disponible y completo, materiales absorbentes presentes y lavaojos accesible. Marcar N/A si no aplica.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se observa el uso de anteojos de seguridad donde se encuentran requeridos?",
+        "category": "EPP y comportamiento",
+        "detail": "Realizar una observación general durante la recorrida, sin convertirla en una auditoría individual.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Se utiliza protección auditiva en los sectores donde se encuentra establecida?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar el uso general durante la recorrida. Marcar N/A donde no corresponda.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observan comportamientos seguros, sin actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar uso de celular, atajos, circulación, intervención de equipos, exposición innecesaria u otras conductas inseguras.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Mantenimiento · Taller Polipapel": [
+      {
+        "text": "¿El taller y sus vías de circulación se encuentran limpios, ordenados y libres de obstáculos?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar pasillos, accesos, residuos, materiales y derrames.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los bancos de trabajo se encuentran ordenados y en condiciones seguras?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar acumulación de piezas, herramientas, materiales y elementos innecesarios.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los hierros, perfiles, repuestos e insumos se encuentran almacenados de forma estable y segura?",
+        "category": "Almacenamiento",
+        "detail": "Verificar riesgo de caída o vuelco y que no invadan las vías de circulación.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, recipientes, identificación y manejo de trapos o absorbentes contaminados.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y elementos de emergencia permanecen visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar acceso inmediato y ausencia de materiales o equipos delante.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las instalaciones y tableros eléctricos observados se encuentran en condiciones seguras?",
+        "category": "Eléctrico",
+        "detail": "Verificar tableros cerrados, cables, fichas, tomas y conexiones sin anomalías evidentes.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las herramientas manuales y eléctricas observadas presentan condiciones generales seguras?",
+        "category": "Máquinas y equipos",
+        "detail": "Verificar cables, fichas, guardas, deterioro visible y almacenamiento adecuado.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los productos químicos, aceites y lubricantes se encuentran identificados, contenidos y sin derrames?",
+        "category": "Productos químicos",
+        "detail": "Verificar envases, bandejas de contención, pérdidas y almacenamiento.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los elementos de izaje observados se encuentran identificados y almacenados adecuadamente?",
+        "category": "Izaje",
+        "detail": "Observar eslingas, cadenas, aparejos, ganchos y condiciones generales visibles.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observa uso adecuado de EPP y ausencia de actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar en forma general las tareas en ejecución, sin reemplazar BOS u otras auditorías formales.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Mantenimiento · Taller Principal": [
+      {
+        "text": "¿El taller y sus vías de circulación se encuentran limpios, ordenados y libres de obstáculos?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar pasillos, accesos, residuos, materiales y derrames.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los bancos de trabajo se encuentran ordenados y en condiciones seguras?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar acumulación de piezas, herramientas, materiales y elementos innecesarios.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los hierros, perfiles, repuestos e insumos se encuentran almacenados de forma estable y segura?",
+        "category": "Almacenamiento",
+        "detail": "Verificar riesgo de caída o vuelco y que no invadan las vías de circulación.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, recipientes, identificación y manejo de trapos o absorbentes contaminados.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y elementos de emergencia permanecen visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar acceso inmediato y ausencia de materiales o equipos delante.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las instalaciones y tableros eléctricos observados se encuentran en condiciones seguras?",
+        "category": "Eléctrico",
+        "detail": "Verificar tableros cerrados, cables, fichas, tomas y conexiones sin anomalías evidentes.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las herramientas manuales y eléctricas observadas presentan condiciones generales seguras?",
+        "category": "Máquinas y equipos",
+        "detail": "Verificar cables, fichas, guardas, deterioro visible y almacenamiento adecuado.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los productos químicos, aceites y lubricantes se encuentran identificados, contenidos y sin derrames?",
+        "category": "Productos químicos",
+        "detail": "Verificar envases, bandejas de contención, pérdidas y almacenamiento.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los elementos de izaje observados se encuentran identificados y almacenados adecuadamente?",
+        "category": "Izaje",
+        "detail": "Observar eslingas, cadenas, aparejos, ganchos y condiciones generales visibles.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observa uso adecuado de EPP y ausencia de actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar en forma general las tareas en ejecución, sin reemplazar BOS u otras auditorías formales.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Mantenimiento · Taller Moldeo Nave Nueva": [
+      {
+        "text": "¿El taller y sus vías de circulación se encuentran limpios, ordenados y libres de obstáculos?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar pasillos, accesos, residuos, materiales y derrames.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los bancos de trabajo se encuentran ordenados y en condiciones seguras?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar acumulación de piezas, herramientas, materiales y elementos innecesarios.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los hierros, perfiles, repuestos e insumos se encuentran almacenados de forma estable y segura?",
+        "category": "Almacenamiento",
+        "detail": "Verificar riesgo de caída o vuelco y que no invadan las vías de circulación.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar segregación, recipientes, identificación y manejo de trapos o absorbentes contaminados.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y elementos de emergencia permanecen visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar acceso inmediato y ausencia de materiales o equipos delante.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las instalaciones y tableros eléctricos observados se encuentran en condiciones seguras?",
+        "category": "Eléctrico",
+        "detail": "Verificar tableros cerrados, cables, fichas, tomas y conexiones sin anomalías evidentes.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las herramientas manuales y eléctricas observadas presentan condiciones generales seguras?",
+        "category": "Máquinas y equipos",
+        "detail": "Verificar cables, fichas, guardas, deterioro visible y almacenamiento adecuado.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los productos químicos, aceites y lubricantes se encuentran identificados, contenidos y sin derrames?",
+        "category": "Productos químicos",
+        "detail": "Verificar envases, bandejas de contención, pérdidas y almacenamiento.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los elementos de izaje observados se encuentran identificados y almacenados adecuadamente?",
+        "category": "Izaje",
+        "detail": "Observar eslingas, cadenas, aparejos, ganchos y condiciones generales visibles.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observa uso adecuado de EPP y ausencia de actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar en forma general las tareas en ejecución, sin reemplazar BOS u otras auditorías formales.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Matricería": [
+      {
+        "text": "¿El sector y sus vías de circulación se encuentran limpios, ordenados y libres de obstrucciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar pasillos, accesos y espacios de trabajo.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los bancos de trabajo se encuentran ordenados y en condiciones seguras?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar herramientas, piezas y materiales fuera de lugar.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Las matrices, piezas y materiales se encuentran almacenados de manera estable y segura?",
+        "category": "Almacenamiento",
+        "detail": "Verificar riesgo de caída, desplazamiento, vuelco o aprisionamiento.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los elementos de izaje se encuentran identificados y en condiciones visibles adecuadas?",
+        "category": "Izaje",
+        "detail": "Observar eslingas, aparejos, cadenas, ganchos y accesorios.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los equipos y herramientas presentan sus protecciones y dispositivos de seguridad en condiciones?",
+        "category": "Máquinas y equipos",
+        "detail": "Verificar guardas y dispositivos de seguridad visibles, sin anulaciones evidentes.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las instalaciones y tableros eléctricos presentan condiciones seguras?",
+        "category": "Eléctrico",
+        "detail": "Verificar cierre, daños visibles y accesos libres.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los extintores y elementos de emergencia se encuentran visibles y accesibles?",
+        "category": "Emergencias",
+        "detail": "Verificar que el acceso permanezca libre de materiales y equipos.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los aceites, lubricantes y productos químicos se encuentran identificados y contenidos?",
+        "category": "Productos químicos",
+        "detail": "Verificar contención, estado de envases, almacenamiento y ausencia de derrames.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observa uso adecuado de EPP y ausencia de actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Realizar una observación general de las tareas y conductas del sector.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Exterior": [
+      {
+        "text": "¿Las calles, accesos y sectores exteriores se encuentran limpios y ordenados?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar residuos, materiales, obstáculos y condición general.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Las sendas peatonales y vías de circulación permanecen libres y en condiciones seguras?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar obstrucciones, delimitación y condiciones de circulación.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los contenedores y sectores de residuos se encuentran ordenados, identificados y sin desbordes?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar contenedores, entorno, segregación y residuos dispersos.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los perímetros y sectores de almacenamiento exterior se encuentran ordenados y sin riesgo de caída u obstrucción?",
+        "category": "Almacenamiento",
+        "detail": "Verificar hierros, pallets, materiales temporales y accesos.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia exteriores permanecen visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar accesos y recorridos libres.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Se observan derrames, pérdidas o acumulaciones de agua que requieran intervención?",
+        "category": "Residuos y ambiente",
+        "detail": "Observar aceite, agua, productos químicos, barro u otras condiciones ambientales.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los espacios verdes y la vegetación se encuentran mantenidos sin generar obstrucciones o riesgos?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar pasto, ramas y vegetación en accesos, calles y equipos.",
+        "weight": 1,
+        "critical": false
+      }
+    ],
+    "Logística": [
+      {
+        "text": "¿El sector y las vías de circulación peatonal y vehicular se encuentran ordenados y libres de obstáculos?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar pallets, materiales, residuos y cualquier obstrucción a la circulación.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los racks presentan condiciones visibles adecuadas, sin daños significativos?",
+        "category": "Almacenamiento",
+        "detail": "Observar golpes, deformaciones, protecciones y estabilidad general.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los pallets y materiales almacenados se encuentran estables y sin riesgo de caída?",
+        "category": "Almacenamiento",
+        "detail": "Verificar pallets dañados, cargas inclinadas, elementos sobresalientes o apilados inseguros.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia permanecen visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar que pallets, mercadería o equipos no bloqueen el acceso.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los autoelevadores, zorras y apiladores observados presentan condiciones generales seguras?",
+        "category": "Máquinas y equipos",
+        "detail": "Observar daños visibles, pérdidas, elementos sueltos y condición general. No reemplaza el checklist formal.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿La zona de carga de baterías se encuentra ordenada y sin condiciones inseguras evidentes?",
+        "category": "Máquinas y equipos",
+        "detail": "Verificar orden, derrames, materiales combustibles, cables, cargadores y accesibilidad.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los cruces, espejos y zonas de circulación permiten una movilidad segura?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar visibilidad, cruces, obstáculos y condiciones generales de circulación.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar recipientes, identificación, segregación y ausencia de desbordes.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observan comportamientos seguros de operadores y peatones?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar celular, velocidad, cruces, interacción peatón-equipo y uso de EPP requerido.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
+    "Expedición": [
+      {
+        "text": "¿El sector de expedición se encuentra limpio, ordenado y con las circulaciones libres?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar mercadería, pallets, residuos y accesos.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿La mercadería preparada para despacho se encuentra almacenada de manera estable y segura?",
+        "category": "Almacenamiento",
+        "detail": "Verificar pallets, apilado y riesgo de caída de carga.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los extintores, hidrantes y salidas de emergencia permanecen visibles, accesibles y libres de obstrucciones?",
+        "category": "Emergencias",
+        "detail": "Verificar que carga, pallets o vehículos no bloqueen accesos.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿La circulación de autoelevadores, zorras, peatones y camiones se desarrolla sin condiciones inseguras evidentes?",
+        "category": "Máquinas y equipos",
+        "detail": "Observar cruces, velocidad, distancias, maniobras y campo visual.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los transportistas cumplen las condiciones básicas de circulación y EPP establecidas?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar chaleco, zonas permitidas y comportamiento durante la permanencia en planta.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los residuos se encuentran correctamente segregados y contenidos?",
+        "category": "Residuos y ambiente",
+        "detail": "Verificar cartón, stretch, residuos generales y recipientes correspondientes.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observan comportamientos seguros, sin actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Observar operadores, transportistas y peatones durante las maniobras y circulación.",
+        "weight": 3,
+        "critical": false
+      }
+    ]
+  },
+  "thresholds": {
+    "good": 90,
+    "regular": 75
+  }
 };
 function normalizeQuestion(q){
   if(typeof q==="string") return {text:q,category:"General",detail:"",weight:1,critical:false};
@@ -724,13 +1394,13 @@ function normalizeQuestion(q){
 }
 function normalizeConfig(c){
   let out=c&&c.sectors?c:JSON.parse(JSON.stringify(DEFAULT));
-  if(Number(out.catalogVersion||0)<6){
+  if(Number(out.catalogVersion||0)<11){
     const savedThresholds=out.thresholds||{good:90,regular:75};
     out=JSON.parse(JSON.stringify(DEFAULT));
     out.thresholds=savedThresholds;
   }
   Object.keys(out.sectors).forEach(k=>out.sectors[k]=(out.sectors[k]||[]).map(normalizeQuestion));
-  out.catalogVersion=6;
+  out.catalogVersion=11;
   if(!out.thresholds) out.thresholds={good:90,regular:75};
   out.thresholds.good=Math.min(100,Math.max(2,Number(out.thresholds.good)||90));
   out.thresholds.regular=Math.min(out.thresholds.good-1,Math.max(1,Number(out.thresholds.regular)||75));
@@ -1330,27 +2000,45 @@ function ensureCatalogIds(){
 async function cloudPushCatalog(){
   if(!cloudSession)return; ensureCatalogIds();
   const sectors=Object.keys(config.sectors).map((name,i)=>({id:config.cloudSectorIds[name],name,sort_order:i,active:true}));
+  const remote=await cloudRest('sectors?select=id,name');
+  const keep=new Set(sectors.map(s=>s.name));
+  for(const oldSector of (remote||[])){
+    if(!keep.has(oldSector.name)){
+      await cloudRest('questions?sector_id=eq.'+oldSector.id,{method:'DELETE'});
+      await cloudRest('sectors?id=eq.'+oldSector.id,{method:'DELETE'});
+    }
+  }
   await cloudUpsert('sectors',sectors);
   for(const name of Object.keys(config.sectors)){
     const sid=config.cloudSectorIds[name]; await cloudRest('questions?sector_id=eq.'+sid,{method:'DELETE'});
     const rows=config.sectors[name].map((q,i)=>({id:q.id,sector_id:sid,text:q.text,category:q.category||'General',detail:q.detail||'',weight:Number(q.weight)||1,critical:!!q.critical,sort_order:i,active:true}));
     await cloudUpsert('questions',rows);
   }
-  await cloudRest('app_settings?key=eq.score_thresholds',{method:'DELETE'});
-  await cloudRest('app_settings',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([{key:'score_thresholds',value:config.thresholds||{good:90,regular:75}}])});
+  await cloudRest('app_settings?key=in.(score_thresholds,catalog_version)',{method:'DELETE'});
+  await cloudRest('app_settings',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([
+    {key:'score_thresholds',value:config.thresholds||{good:90,regular:75}},
+    {key:'catalog_version',value:11}
+  ])});
+  config.catalogVersion=11;
   saveConfig();
 }
 async function cloudPullCatalog(){
   const sectors=await cloudRest('sectors?select=*&active=eq.true&order=sort_order.asc'); if(!sectors?.length)return false;
   const questions=await cloudRest('questions?select=*&active=eq.true&order=sort_order.asc'); const settings=await cloudRest('app_settings?select=*&key=eq.score_thresholds');
   const newS={},ids={}; sectors.forEach(s=>{ids[s.name]=s.id; newS[s.name]=(questions||[]).filter(q=>q.sector_id===s.id).map(q=>({id:q.id,text:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical}));});
-  config.sectors=newS; config.cloudSectorIds=ids; if(settings?.[0]?.value)config.thresholds=settings[0].value; saveConfig(); refreshSectors(); initAudit(); return true;
+  config.sectors=newS; config.cloudSectorIds=ids; config.catalogVersion=11; if(settings?.[0]?.value)config.thresholds=settings[0].value; saveConfig(); refreshSectors(); initAudit(); return true;
 }
 async function cloudFullSync(){
   if(cloudBusy)return; cloudBusy=true; cloudSetStatus('Sincronizando…','warn');
   try{
+    const remoteVersion=await cloudRest('app_settings?select=value&key=eq.catalog_version');
+    const rv=Number(remoteVersion?.[0]?.value||0);
     const remoteS=await cloudRest('sectors?select=id&limit=1');
-    if(remoteS?.length)await cloudPullCatalog(); else await cloudPushCatalog();
+    if(!remoteS?.length || rv<11){
+      await cloudPushCatalog();
+    }else{
+      await cloudPullCatalog();
+    }
     await cloudPushRecords(); await cloudPullRecords(); renderHistory(); renderDeviations(); renderCharts(); cloudSetStatus('Sincronizado','ok'); document.getElementById('cloudSyncMsg').textContent='Última sincronización: '+new Date().toLocaleString();
   }catch(e){console.error(e);cloudSetStatus('Error de sincronización','bad');document.getElementById('cloudSyncMsg').textContent=e.message;}
   finally{cloudBusy=false;}

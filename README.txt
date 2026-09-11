@@ -86,3 +86,12 @@ MEJORAS V10:
 - KPIs de auditorías, promedio, abiertos, cerrados y reincidencias.
 - Ranking por sector y comparación contra mes anterior.
 - Gráficos de abiertos/cerrados y resultado por categoría.
+
+
+MEJORAS V11:
+- Catálogo EHS simplificado para funcionar como termómetro semanal, no como auditoría formal.
+- Producción separada por Polipapel, Encartonado, Mezcla, Extrusión, Molino, Impresión, Moldeo Pote y Moldeo Nave Nueva.
+- Mantenimiento separado por Taller Polipapel, Taller Principal y Taller Moldeo Nave Nueva.
+- Matricería, Exterior, Logística y Expedición como sectores independientes.
+- Categorías estandarizadas, pesos 1/3/5 y preguntas críticas definidas.
+- Migración de catálogo sincronizada con Supabase una sola vez mediante catalog_version 11.
