@@ -95,3 +95,9 @@ MEJORAS V11:
 - Matricería, Exterior, Logística y Expedición como sectores independientes.
 - Categorías estandarizadas, pesos 1/3/5 y preguntas críticas definidas.
 - Migración de catálogo sincronizada con Supabase una sola vez mediante catalog_version 11.
+
+
+MEJORAS V12:
+- Fuerza actualización del ícono en Android/Chrome con nombres de archivo nuevos.
+- Agrega favicon y shortcut icon como respaldo para accesos directos.
+- Manifest actualizado con id, scope y propósitos any/maskable.

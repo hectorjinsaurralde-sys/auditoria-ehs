@@ -8,16 +8,24 @@
   "description": "Aplicación de auditorías de Seguridad, Higiene y Medio Ambiente.",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "ehs-icon-192-v12.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "ehs-icon-512-v12.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "ehs-icon-512-v12.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "id": "./",
+  "scope": "./"
 }
