@@ -108,3 +108,9 @@ MEJORAS V13:
 - Historial remoto se carga sin fotos/respuestas pesadas; el detalle se obtiene al abrir una auditoría.
 - Tiempo máximo de conexión y mensaje claro si la red falla.
 - Si Supabase falla, la auditoría queda guardada localmente y se puede reintentar luego.
+
+
+MEJORAS V14:
+- La auditoría sincroniza primero datos y puntaje aunque una foto falle.
+- Fotos al bucket privado audit-photos de Supabase.
+- En PC las fotos se cargan al abrir Ver detalle.
