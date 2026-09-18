@@ -126,7 +126,7 @@
   <nav id="tabs">
     <button data-page="new" class="active">Auditar</button>
     <button data-page="history">Historial</button>
-    <button data-page="deviations">Desvíos</button>
+    <button data-page="deviations">Hallazgos</button>
     <button data-page="settings">Preguntas</button>
     <button data-page="charts">Tablero</button>
     <button data-page="backup">Respaldo</button>
@@ -176,10 +176,10 @@
       <div class="card" id="previousDeviationsCard">
         <div class="row between">
           <div>
-            <h2 class="section-title" style="margin-bottom:3px">Seguimiento de desvíos anteriores</h2>
-            <div class="small muted">Verificá qué pasó con los hallazgos pendientes de este sector.</div>
+            <h2 class="section-title" style="margin-bottom:3px">Hallazgos anteriores del sector</h2>
+            <div class="small muted">Referencia rápida de lo observado en auditorías anteriores. No gestiona planes de acción.</div>
           </div>
-          <span class="pill" id="openPrevCount">0 abiertos</span>
+          <span class="pill" id="openPrevCount">0 hallazgos</span>
         </div>
         <div id="previousDeviations"></div>
       </div>
@@ -224,8 +224,8 @@
 
     <section id="page-deviations" class="page">
       <div class="card">
-        <div class="row between"><div><h2 class="section-title" style="margin-bottom:3px">Plan y seguimiento de desvíos</h2><div class="small muted">Cada “No cumple” queda abierto hasta que lo verifiques y cierres.</div></div><span class="pill" id="openDevCount">0 abiertos</span></div>
-        <div class="grid two" style="margin-top:12px"><label>Sector<select id="devSectorFilter"><option value="">Todos</option></select></label><label>Estado<select id="devStatusFilter"><option value="open">Abiertos</option><option value="closed">Cerrados</option><option value="">Todos</option></select></label></div>
+        <div class="row between"><div><h2 class="section-title" style="margin-bottom:3px">Historial de hallazgos</h2><div class="small muted">Cada “No cumple” queda como registro histórico del estado del sector. El plan de acción se gestiona por fuera de esta app.</div></div><span class="pill" id="openDevCount">0 hallazgos</span></div>
+        <div class="grid two" style="margin-top:12px"><label>Sector<select id="devSectorFilter"><option value="">Todos</option></select></label><label>Mes<select id="devMonthFilter"><option value="">Todos</option></select></label></div>
       </div>
       <div class="card"><div class="grid two" id="devMetrics"></div></div>
       <div id="deviationList"></div>
@@ -291,7 +291,7 @@
         <div class="chart-box"><div class="row between"><div><strong>Ranking mensual por sector</strong><div class="chart-note">Promedio del mes y variación respecto del mes anterior.</div></div></div><div id="sectorRanking"></div></div>
         <div class="chart-box"><div class="row between"><div><strong>Resultado mensual por sector</strong><div class="chart-note">Verde, amarillo o rojo según el promedio del sector.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadMonthlyChart">Descargar gráfico</button></div></div><canvas id="monthlySectorChart" class="chart" width="900" height="320"></canvas></div>
         <div class="chart-box"><div class="row between"><div><strong>Evolución mensual del puntaje</strong><div class="chart-note">Elegí un sector o mirá el promedio general.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadTrendChart">Descargar gráfico</button></div></div><canvas id="trendChart" class="chart" width="900" height="280"></canvas></div>
-        <div class="chart-box"><div class="row between"><div><strong>Desvíos abiertos vs cerrados</strong><div class="chart-note">Estado actual de los hallazgos detectados en el mes seleccionado.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadDeviationChart">Descargar gráfico</button></div></div><canvas id="deviationChart" class="chart" width="900" height="250"></canvas></div>
+        <div class="chart-box"><div class="row between"><div><strong>Hallazgos por sector</strong><div class="chart-note">Cantidad de hallazgos registrados por sector en el mes seleccionado.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadDeviationChart">Descargar gráfico</button></div></div><canvas id="deviationChart" class="chart" width="900" height="250"></canvas></div>
         <div class="chart-box"><div class="row between"><div><strong>Resultado por categoría</strong><div class="chart-note">Promedio de las categorías auditadas durante el mes.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadCategoryChart">Descargar gráfico</button></div></div><canvas id="categoryChart" class="chart" width="900" height="320"></canvas></div>
         <div class="chart-box"><strong>Resumen mensual por sector</strong><div id="monthlySummaryTable"></div></div>
       </div>
@@ -1530,17 +1530,11 @@ function buildMonthlySummary(month){
 let followupState={};
 function renderPreviousDeviations(){
   const sector=document.getElementById("sectorSelect").value;
-  const open=deviations.filter(d=>d.sector===sector&&d.status!=="closed");
-  document.getElementById("openPrevCount").textContent=open.length+" abiertos";
+  const items=deviations.filter(d=>d.sector===sector).sort((a,b)=>String(b.lastSeen||b.firstDetected||'').localeCompare(String(a.lastSeen||a.firstDetected||''))).slice(0,5);
+  document.getElementById("openPrevCount").textContent=items.length+" hallazgo(s)";
   const w=document.getElementById("previousDeviations");
-  if(!open.length){w.innerHTML='<p class="muted small">No hay desvíos pendientes de auditorías anteriores para este sector.</p>';return;}
-  w.innerHTML="";
-  open.forEach(d=>{
-    const st=followupState[d.id]||{result:"pending",note:""};const div=document.createElement("div");div.className="follow-card";
-    div.innerHTML=`<div class="small muted">${escapeHtml(d.firstDetected||"")} · ${escapeHtml(d.category||"General")}</div><strong>${escapeHtml(d.question)}</strong>${d.observation?`<div class="small" style="margin-top:4px">${escapeHtml(d.observation)}</div>`:""}${d.action?`<div class="small muted" style="margin-top:4px"><strong>Acción:</strong> ${escapeHtml(d.action)}</div>`:""}<div class="choices" style="grid-template-columns:1fr 1fr"><button class="choice ok ${st.result==="closed"?"sel":""}" data-v="closed">✓ Corregido</button><button class="choice bad ${st.result==="open"?"sel":""}" data-v="open">✕ Sigue abierto</button></div><input class="follow-note" placeholder="Observación de la verificación" value="${escapeHtml(st.note||"")}">`;
-    div.querySelectorAll(".choice").forEach(b=>b.addEventListener("click",()=>{followupState[d.id]={result:b.dataset.v,note:div.querySelector(".follow-note").value};renderPreviousDeviations();}));
-    div.querySelector(".follow-note").addEventListener("input",e=>{followupState[d.id]=followupState[d.id]||{result:"pending",note:""};followupState[d.id].note=e.target.value;});w.appendChild(div);
-  });
+  if(!items.length){w.innerHTML='<p class="muted small">No hay hallazgos anteriores registrados para este sector.</p>';return;}
+  w.innerHTML=items.map(d=>`<div class="follow-card"><div class="small muted">${escapeHtml(d.lastSeen||d.firstDetected||"")} · ${escapeHtml(d.category||"General")}</div><strong>${escapeHtml(d.question)}</strong>${d.observation?`<div class="small" style="margin-top:4px">${escapeHtml(d.observation)}</div>`:""}${Number(d.timesSeen)>1?`<div class="small muted" style="margin-top:4px">Reincidencia histórica: ${d.timesSeen} registros.</div>`:""}</div>`).join('');
 }
 
 
@@ -1688,11 +1682,13 @@ document.getElementById("saveAudit").addEventListener("click",()=>{
     answers:JSON.parse(JSON.stringify(answers)),
     createdAt:new Date().toISOString()
   };
-  Object.entries(followupState).forEach(([id,st])=>{const d=deviations.find(x=>String(x.id)===String(id));if(!d||st.result==="pending")return;d.lastVerified=record.fecha;d.lastVerificationNote=st.note||"";if(st.result==="closed"){d.status="closed";d.closedDate=record.fecha;}else{d.status="open";d.lastSeen=record.fecha;}});
-  answers.filter(a=>a.value==="bad").forEach(a=>{let d=deviations.find(x=>x.sector===sector&&x.status!=="closed"&&x.question===a.question);if(d){d.lastSeen=record.fecha;d.observation=a.obs||d.observation;if(a.photo)d.photo=a.photo;d.timesSeen=(d.timesSeen||1)+1;}else{deviations.unshift({id:newId(),sector,question:a.question,category:a.category||"General",detail:a.detail||"",observation:a.obs||"",photo:a.photo||null,critical:Boolean(a.critical),firstDetected:record.fecha,lastSeen:record.fecha,timesSeen:1,status:"open",action:"",responsible:"",dueDate:"",closedDate:"",lastVerified:"",lastVerificationNote:""});}});
+  answers.filter(a=>a.value==="bad").forEach(a=>{
+    const previousCount=deviations.filter(x=>x.sector===sector&&x.question===a.question).length;
+    deviations.unshift({id:newId(),sector,question:a.question,category:a.category||"General",detail:a.detail||"",observation:a.obs||"",photo:a.photo||null,critical:Boolean(a.critical),firstDetected:record.fecha,lastSeen:record.fecha,timesSeen:previousCount+1,status:"open",action:"",responsible:"",dueDate:"",closedDate:"",lastVerified:"",lastVerificationNote:""});
+  });
   audits.unshift(record);followupState={};
   cloudMarkAuditDirty(record.id);
-  deviations.filter(d=>d.lastSeen===record.fecha || d.lastVerified===record.fecha).forEach(d=>cloudMarkDeviationDirty(d.id));
+  deviations.filter(d=>d.lastSeen===record.fecha).forEach(d=>cloudMarkDeviationDirty(d.id));
   try{ saveAudits(); saveDeviations(); cloudSyncSoon(); }
   catch(e){
     audits.shift();
@@ -1700,7 +1696,7 @@ document.getElementById("saveAudit").addEventListener("click",()=>{
     return;
   }
   const msg=document.getElementById("saveMsg");
-  msg.textContent=`Auditoría guardada: ${sector} · ${score}% (${record.rating}) · ${record.bad} desvío(s).`;
+  msg.textContent=`Auditoría guardada: ${sector} · ${score}% (${record.rating}) · ${record.bad} hallazgo(s).`;
   msg.classList.remove("hidden");
   document.getElementById("generalObs").value="";
   document.getElementById("companion").value="";
@@ -1833,13 +1829,13 @@ function renderHistory(){
 
 function prevMonthKey(month){if(!month)return '';const [y,m]=month.split('-').map(Number);const d=new Date(Date.UTC(y,m-1,1));d.setUTCMonth(d.getUTCMonth()-1);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;}
 function auditsForMonth(month){return audits.filter(a=>(a.fecha||'').slice(0,7)===month);}
-function deviationCountsForMonth(month){const rows=deviations.filter(d=>(d.firstDetected||'').slice(0,7)===month);return {total:rows.length,open:rows.filter(d=>d.status!=='closed').length,closed:rows.filter(d=>d.status==='closed').length,recurrent:rows.filter(d=>(Number(d.timesSeen)||1)>1).length};}
-function sectorStats(month){const cur=auditsForMonth(month),prev=auditsForMonth(prevMonthKey(month));const names=[...new Set(cur.map(a=>a.sector))].sort();return names.map(name=>{const ca=cur.filter(a=>a.sector===name),pa=prev.filter(a=>a.sector===name),avg=average(ca.map(a=>a.score)),prevAvg=pa.length?average(pa.map(a=>a.score)):null,open=deviations.filter(d=>d.sector===name&&d.status!=='closed').length,recurrent=deviations.filter(d=>d.sector===name&&d.status!=='closed'&&(Number(d.timesSeen)||1)>1).length;return {name,count:ca.length,avg,prevAvg,delta:prevAvg===null?null:avg-prevAvg,open,recurrent,rating:ratingFromAvg(avg)};}).sort((a,b)=>b.avg-a.avg||a.name.localeCompare(b.name));}
+function deviationCountsForMonth(month){const rows=deviations.filter(d=>(d.firstDetected||d.lastSeen||'').slice(0,7)===month);return {total:rows.length,recurrent:rows.filter(d=>(Number(d.timesSeen)||1)>1).length};}
+function sectorStats(month){const cur=auditsForMonth(month),prev=auditsForMonth(prevMonthKey(month));const names=[...new Set(cur.map(a=>a.sector))].sort();return names.map(name=>{const ca=cur.filter(a=>a.sector===name),pa=prev.filter(a=>a.sector===name),avg=average(ca.map(a=>a.score)),prevAvg=pa.length?average(pa.map(a=>a.score)):null,findings=deviations.filter(d=>d.sector===name&&(d.firstDetected||d.lastSeen||'').slice(0,7)===month).length,recurrent=deviations.filter(d=>d.sector===name&&(d.firstDetected||d.lastSeen||'').slice(0,7)===month&&(Number(d.timesSeen)||1)>1).length;return {name,count:ca.length,avg,prevAvg,delta:prevAvg===null?null:avg-prevAvg,findings,recurrent,rating:ratingFromAvg(avg)};}).sort((a,b)=>b.avg-a.avg||a.name.localeCompare(b.name));}
 function categoryStats(month){const rows=auditsForMonth(month),agg={};rows.forEach(a=>(a.answers||[]).forEach(x=>{if(!x||!x.value||x.value==='na')return;const cat=x.category||'General',w=Number(x.weight)||1;agg[cat]=agg[cat]||{ok:0,total:0};agg[cat].total+=w;if(x.value==='ok')agg[cat].ok+=w;}));return Object.entries(agg).map(([name,v])=>({name,score:v.total?Math.round(v.ok/v.total*100):0})).sort((a,b)=>b.score-a.score);}
 function drawPercentBars(canvas,labels,values,colors){const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.font='12px Arial';if(!labels.length){ctx.fillStyle='#64748b';ctx.fillText('No hay datos para mostrar.',20,30);return;}const pad={l:52,r:18,t:20,b:70},gw=W-pad.l-pad.r,gh=H-pad.t-pad.b;ctx.strokeStyle='#d9e1e4';for(let i=0;i<=5;i++){const y=pad.t+gh-gh*i/5;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.fillStyle='#64748b';ctx.fillText(String(i*20),12,y+4);}const slot=gw/labels.length,bw=Math.min(75,slot*.55);labels.forEach((lab,i)=>{const v=Math.max(0,Math.min(100,Number(values[i])||0)),h=v*gh/100,x=pad.l+slot*i+(slot-bw)/2,y=pad.t+gh-h;ctx.fillStyle=colors[i]||'#0f766e';ctx.fillRect(x,y,bw,h);ctx.fillStyle='#334155';ctx.fillText(v+'%',x+bw/2-12,y-7);ctx.save();ctx.translate(x+bw/2,H-18);ctx.rotate(-.35);ctx.fillText(lab,0,0);ctx.restore();});}
 function drawCountBars(canvas,labels,values,colors){const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.font='14px Arial';if(!labels.length){ctx.fillStyle='#64748b';ctx.fillText('No hay datos para mostrar.',20,30);return;}const max=Math.max(1,...values),pad={l:55,r:20,t:25,b:45},gw=W-pad.l-pad.r,gh=H-pad.t-pad.b,slot=gw/labels.length,bw=Math.min(170,slot*.5);labels.forEach((lab,i)=>{const v=Number(values[i])||0,h=v*gh/max,x=pad.l+slot*i+(slot-bw)/2,y=pad.t+gh-h;ctx.fillStyle=colors[i];ctx.fillRect(x,y,bw,h);ctx.fillStyle='#334155';ctx.font='bold 20px Arial';ctx.fillText(String(v),x+bw/2-8,y-8);ctx.font='14px Arial';ctx.fillText(lab,x+bw/2-28,H-18);});}
-function renderRanking(month){const stats=sectorStats(month),wrap=document.getElementById('sectorRanking');if(!stats.length){wrap.innerHTML='<p class="muted">No hay auditorías en el mes seleccionado.</p>';return;}const rows=stats.map((s,i)=>{const t=s.delta===null?'—':s.delta>0?`▲ +${s.delta}`:s.delta<0?`▼ ${s.delta}`:'● 0',tc=s.delta===null?'trend-flat':s.delta>0?'trend-up':s.delta<0?'trend-down':'trend-flat';return `<tr><td><strong>${i+1}</strong></td><td>${escapeHtml(s.name)}</td><td>${s.count}</td><td><strong>${s.avg}%</strong></td><td><span class="rating ${ratingClass(s.rating)}">${ratingEmoji(s.rating)} ${s.rating}</span></td><td class="${tc}">${t}</td><td>${s.open}</td><td>${s.recurrent}</td></tr>`;}).join('');wrap.innerHTML=`<div style="overflow-x:auto"><table class="rank-table"><thead><tr><th>#</th><th>Sector</th><th>Aud.</th><th>Promedio</th><th>Resultado</th><th>Vs mes ant.</th><th>Abiertos</th><th>Reinc.</th></tr></thead><tbody>${rows}</tbody></table></div>`;}
-function renderDashboardKpis(month){const ma=auditsForMonth(month),avg=average(ma.map(a=>a.score)),res=ratingFromAvg(avg),dc=deviationCountsForMonth(month);document.getElementById('dashboardKpis').innerHTML=`<div class="dash-kpi"><div class="l">Auditorías del mes</div><div class="v">${ma.length}</div></div><div class="dash-kpi ${ratingClass(res)}"><div class="l">Promedio mensual</div><div class="v">${ma.length?avg+'%':'—'}</div><div class="small">${ma.length?ratingEmoji(res)+' '+res:''}</div></div><div class="dash-kpi bad"><div class="l">Desvíos abiertos</div><div class="v">${dc.open}</div></div><div class="dash-kpi good"><div class="l">Desvíos cerrados</div><div class="v">${dc.closed}</div></div><div class="dash-kpi regular"><div class="l">Reincidencias</div><div class="v">${dc.recurrent}</div></div>`;const ranking=sectorStats(month);let insight='Todavía no hay auditorías cargadas para este mes.';if(ranking.length){const best=ranking[0],worst=ranking[ranking.length-1];insight=`Mejor resultado: ${best.name} ${best.avg}%. Sector a priorizar: ${worst.name} ${worst.avg}%. ${dc.recurrent?`Hay ${dc.recurrent} desvío(s) reincidente(s) detectado(s) en el mes.`:'No hay reincidencias registradas en el mes.'}`;}document.getElementById('dashboardInsight').textContent=insight;}
+function renderRanking(month){const stats=sectorStats(month),wrap=document.getElementById('sectorRanking');if(!stats.length){wrap.innerHTML='<p class="muted">No hay auditorías en el mes seleccionado.</p>';return;}const rows=stats.map((s,i)=>{const t=s.delta===null?'—':s.delta>0?`▲ +${s.delta}`:s.delta<0?`▼ ${s.delta}`:'● 0',tc=s.delta===null?'trend-flat':s.delta>0?'trend-up':s.delta<0?'trend-down':'trend-flat';return `<tr><td><strong>${i+1}</strong></td><td>${escapeHtml(s.name)}</td><td>${s.count}</td><td><strong>${s.avg}%</strong></td><td><span class="rating ${ratingClass(s.rating)}">${ratingEmoji(s.rating)} ${s.rating}</span></td><td class="${tc}">${t}</td><td>${s.findings}</td><td>${s.recurrent}</td></tr>`;}).join('');wrap.innerHTML=`<div style="overflow-x:auto"><table class="rank-table"><thead><tr><th>#</th><th>Sector</th><th>Aud.</th><th>Promedio</th><th>Resultado</th><th>Vs mes ant.</th><th>Hallazgos</th><th>Reinc.</th></tr></thead><tbody>${rows}</tbody></table></div>`;}
+function renderDashboardKpis(month){const ma=auditsForMonth(month),avg=average(ma.map(a=>a.score)),res=ratingFromAvg(avg),dc=deviationCountsForMonth(month),sectors=[...new Set(ma.map(a=>a.sector))].length;document.getElementById('dashboardKpis').innerHTML=`<div class="dash-kpi"><div class="l">Auditorías del mes</div><div class="v">${ma.length}</div></div><div class="dash-kpi ${ratingClass(res)}"><div class="l">Promedio mensual</div><div class="v">${ma.length?avg+'%':'—'}</div><div class="small">${ma.length?ratingEmoji(res)+' '+res:''}</div></div><div class="dash-kpi bad"><div class="l">Hallazgos del mes</div><div class="v">${dc.total}</div></div><div class="dash-kpi regular"><div class="l">Reincidencias</div><div class="v">${dc.recurrent}</div></div><div class="dash-kpi"><div class="l">Sectores auditados</div><div class="v">${sectors}</div></div>`;const ranking=sectorStats(month);let insight='Todavía no hay auditorías cargadas para este mes.';if(ranking.length){const best=ranking[0],worst=ranking[ranking.length-1];insight=`Mejor resultado: ${best.name} ${best.avg}%. Sector a priorizar: ${worst.name} ${worst.avg}%. ${dc.recurrent?`Hay ${dc.recurrent} hallazgo(s) reincidente(s) en el mes.`:'No hay reincidencias registradas en el mes.'}`;}document.getElementById('dashboardInsight').textContent=insight;}
 function renderCharts(){
   refreshSectors();
   const monthSel=document.getElementById('chartMonthFilter'),sectorSel=document.getElementById('chartSectorFilter');
@@ -1851,7 +1847,7 @@ function renderCharts(){
   renderDashboardKpis(selectedMonth);renderRanking(selectedMonth);
   const trendSource=sec?audits.filter(a=>a.sector===sec):audits,grouped={};trendSource.forEach(a=>{const m=(a.fecha||'').slice(0,7);if(!m)return;(grouped[m]=grouped[m]||[]).push(Number(a.score)||0);});const trendMonths=Object.keys(grouped).sort();drawLineChart(document.getElementById('trendChart'),trendMonths.map(monthLabel),trendMonths.map(m=>average(grouped[m])));
   const stats=sectorStats(selectedMonth);drawBarChart(document.getElementById('monthlySectorChart'),stats.map(s=>s.name),stats.map(s=>s.avg));
-  const dc=deviationCountsForMonth(selectedMonth);drawCountBars(document.getElementById('deviationChart'),['Abiertos','Cerrados'],[dc.open,dc.closed],['#ef4444','#16a34a']);
+  const hf=deviations.filter(d=>(d.firstDetected||d.lastSeen||'').slice(0,7)===selectedMonth),hs=[...new Set(hf.map(d=>d.sector))].sort();drawCountBars(document.getElementById('deviationChart'),hs,hs.map(sec=>hf.filter(d=>d.sector===sec).length),hs.map(()=> '#ef4444'));
   const cats=categoryStats(selectedMonth);drawPercentBars(document.getElementById('categoryChart'),cats.map(c=>c.name),cats.map(c=>c.score),cats.map(c=>{const r=ratingFromAvg(c.score);return r==='Bueno'?'#16a34a':r==='Regular'?'#eab308':'#ef4444';}));
   document.getElementById('monthlySummaryTable').innerHTML=buildMonthlySummary(selectedMonth);
 }
@@ -1860,16 +1856,29 @@ document.getElementById('chartMonthFilter').addEventListener('change',renderChar
 document.getElementById('refreshDashboard').addEventListener('click',async()=>{if(cloudSession){try{await cloudFullSync();}catch(e){console.error(e);}}renderCharts();});
 document.getElementById('downloadTrendChart').addEventListener('click',()=>downloadCanvas(document.getElementById('trendChart'),'evolucion-puntaje.png'));
 document.getElementById('downloadMonthlyChart').addEventListener('click',()=>downloadCanvas(document.getElementById('monthlySectorChart'),'resultado-mensual-sectores.png'));
-document.getElementById('downloadDeviationChart').addEventListener('click',()=>downloadCanvas(document.getElementById('deviationChart'),'desvios-abiertos-cerrados.png'));
+document.getElementById('downloadDeviationChart').addEventListener('click',()=>downloadCanvas(document.getElementById('deviationChart'),'hallazgos-por-sector.png'));
 document.getElementById('downloadCategoryChart').addEventListener('click',()=>downloadCanvas(document.getElementById('categoryChart'),'resultado-por-categoria.png'));
 
 function renderDeviations(){
-  refreshSectors();const sf=document.getElementById("devSectorFilter").value,stf=document.getElementById("devStatusFilter").value;const filtered=deviations.filter(d=>(!sf||d.sector===sf)&&(!stf||d.status===stf));const open=deviations.filter(d=>d.status!=="closed");document.getElementById("openDevCount").textContent=open.length+" abiertos";
-  const aa=sf?audits.filter(a=>a.sector===sf):audits,month=todayLocal().slice(0,7),avg=aa.length?Math.round(aa.reduce((x,a)=>x+(Number(a.score)||0),0)/aa.length):0,mc=aa.filter(a=>(a.fecha||"").slice(0,7)===month).length;document.getElementById("devMetrics").innerHTML=`<div class="metric"><span class="small muted">Puntaje promedio</span><strong>${avg}%</strong></div><div class="metric"><span class="small muted">Auditorías este mes</span><strong>${mc}</strong></div>`;
-  const w=document.getElementById("deviationList");if(!filtered.length){w.innerHTML='<div class="card"><p class="muted">No hay desvíos con este filtro.</p></div>';return;}w.innerHTML="";filtered.forEach(d=>{const div=document.createElement("div");div.className="card audit-card "+(d.status==="closed"?"status-ok":"status-bad");div.innerHTML=`<div class="row between"><div><span class="tag ${d.critical?"critical":""}">${escapeHtml(d.category||"General")}${d.critical?" · CRÍTICO":""}</span><br><strong>${escapeHtml(d.question)}</strong></div><span class="pill">${d.status==="closed"?"Cerrado":"Abierto"}</span></div><div class="small muted" style="margin-top:5px">${escapeHtml(d.sector)} · Detectado: ${escapeHtml(d.firstDetected||"")} · Visto ${d.timesSeen||1} vez/veces</div>${d.observation?`<div style="margin-top:7px">${escapeHtml(d.observation)}</div>`:""}${d.photo?`<img src="${d.photo}" class="photo-preview" alt="Evidencia">`:""}<div class="grid two" style="margin-top:10px"><label>Acción correctiva<textarea class="d-action" placeholder="Qué se va a hacer">${escapeHtml(d.action||"")}</textarea></label><label>Responsable<input class="d-resp" value="${escapeHtml(d.responsible||"")}" placeholder="Nombre / sector"></label><label>Fecha compromiso<input class="d-date" type="date" value="${escapeHtml(d.dueDate||"")}"></label><label>Estado<select class="d-status"><option value="open" ${d.status!=="closed"?"selected":""}>Abierto</option><option value="closed" ${d.status==="closed"?"selected":""}>Cerrado</option></select></label></div>${d.lastVerificationNote?`<div class="small muted" style="margin-top:8px"><strong>Última verificación:</strong> ${escapeHtml(d.lastVerified||"")} · ${escapeHtml(d.lastVerificationNote)}</div>`:""}<button class="btn primary save-dev" style="width:100%;margin-top:10px">Guardar seguimiento</button>`;div.querySelector(".save-dev").addEventListener("click",()=>{d.action=div.querySelector(".d-action").value.trim();d.responsible=div.querySelector(".d-resp").value.trim();d.dueDate=div.querySelector(".d-date").value;const ns=div.querySelector(".d-status").value;if(ns==="closed"&&d.status!=="closed")d.closedDate=todayLocal();if(ns==="open")d.closedDate="";d.status=ns;cloudMarkDeviationDirty(d.id);saveDeviations();cloudSyncSoon();renderDeviations();});w.appendChild(div);});
+  refreshSectors();
+  const sf=document.getElementById("devSectorFilter").value;
+  const monthSel=document.getElementById("devMonthFilter");
+  const months=[...new Set(deviations.map(d=>(d.firstDetected||d.lastSeen||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  const previousMonth=monthSel.value;
+  monthSel.innerHTML='<option value="">Todos</option>'+months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  if(months.includes(previousMonth))monthSel.value=previousMonth;
+  const mf=monthSel.value;
+  const filtered=deviations.filter(d=>(!sf||d.sector===sf)&&(!mf||(d.firstDetected||d.lastSeen||'').slice(0,7)===mf)).sort((a,b)=>String(b.firstDetected||b.lastSeen||'').localeCompare(String(a.firstDetected||a.lastSeen||'')));
+  document.getElementById("openDevCount").textContent=filtered.length+" hallazgo(s)";
+  const aa=sf?audits.filter(a=>a.sector===sf):audits,month=todayLocal().slice(0,7),avg=aa.length?Math.round(aa.reduce((x,a)=>x+(Number(a.score)||0),0)/aa.length):0,mc=aa.filter(a=>(a.fecha||"").slice(0,7)===month).length;
+  document.getElementById("devMetrics").innerHTML=`<div class="metric"><span class="small muted">Puntaje promedio</span><strong>${avg}%</strong></div><div class="metric"><span class="small muted">Auditorías este mes</span><strong>${mc}</strong></div>`;
+  const w=document.getElementById("deviationList");
+  if(!filtered.length){w.innerHTML='<div class="card"><p class="muted">No hay hallazgos con este filtro.</p></div>';return;}
+  w.innerHTML="";
+  filtered.forEach(d=>{const div=document.createElement("div");div.className="card audit-card status-bad";div.innerHTML=`<div class="row between"><div><span class="tag ${d.critical?"critical":""}">${escapeHtml(d.category||"General")}${d.critical?" · CRÍTICO":""}</span><br><strong>${escapeHtml(d.question)}</strong></div><span class="pill">${escapeHtml(d.firstDetected||d.lastSeen||"")}</span></div><div class="small muted" style="margin-top:5px">${escapeHtml(d.sector)}${Number(d.timesSeen)>1?` · Reincidencia histórica ${d.timesSeen}`:""}</div>${d.observation?`<div style="margin-top:7px">${escapeHtml(d.observation)}</div>`:""}${d.photo?`<img src="${d.photo}" class="photo-preview" alt="Evidencia">`:""}`;w.appendChild(div);});
 }
 document.getElementById("devSectorFilter").addEventListener("change",renderDeviations);
-document.getElementById("devStatusFilter").addEventListener("change",renderDeviations);
+document.getElementById("devMonthFilter").addEventListener("change",renderDeviations);
 
 function updateScoreGuide(){
   const good=Math.min(100,Math.max(2,Number(document.getElementById("goodThreshold").value)||90));

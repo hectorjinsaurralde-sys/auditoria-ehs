@@ -122,3 +122,12 @@ MEJORAS V15:
 - Nuevo bloque visible Criterio de puntuación.
 - Explica pesos 1/3/5, Cumple/No cumple/N-A y límites Bueno/Regular/Malo.
 - Regla crítica activa: un No cumple crítico fuerza resultado Malo.
+
+
+MEJORAS V16:
+- Se elimina la gestión de plan de acción de la app.
+- Desvíos pasa a Historial de hallazgos.
+- Se eliminan responsable, fecha compromiso, estado y seguimiento.
+- Los hallazgos anteriores se muestran solo como referencia al auditar.
+- Cada No cumple queda registrado como una foto histórica independiente.
+- El tablero usa hallazgos del mes y reincidencias, sin abiertos/cerrados.
