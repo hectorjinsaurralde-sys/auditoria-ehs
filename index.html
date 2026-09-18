@@ -99,6 +99,13 @@
     .rank-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}.rank-table th,.rank-table td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}.rank-table th{font-size:11px;text-transform:uppercase;color:var(--muted)}
     .trend-up{color:#167c4b;font-weight:900}.trend-down{color:#b42318;font-weight:900}.trend-flat{color:#64748b;font-weight:900}
     .dashboard-note{background:#eef8f7;border:1px solid #c7e8e4;color:#135f59;padding:10px 12px;border-radius:12px;font-size:12px;margin-top:10px}
+    .score-guide{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+    .score-guide-card{border-radius:14px;padding:12px;border:1px solid var(--line);background:#fff}
+    .score-guide-card .title{font-weight:900;font-size:14px}.score-guide-card .value{font-size:22px;font-weight:900;margin-top:4px}
+    .score-guide-card.good{background:#eaf8f0;border-color:#99d1b3;color:#145a36}.score-guide-card.regular{background:#fff8df;border-color:#ead69a;color:#6f5510}.score-guide-card.bad{background:#fff0ef;border-color:#f0b5b0;color:#9f241b}
+    .weight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.weight-chip{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fbfcfc}.weight-chip strong{font-size:18px}
+    .rule-box{margin-top:10px;border-left:5px solid #ef4444;background:#fff5f5;border-radius:10px;padding:10px 12px;color:#7f1d1d;font-size:13px}
+
 
     @media(max-width:650px){
       .grid.two{grid-template-columns:1fr}
@@ -106,6 +113,7 @@
       nav button{font-size:11px}
       main{padding-left:10px;padding-right:10px}
       .dash-kpis{grid-template-columns:1fr 1fr}
+      .score-guide,.weight-grid{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -225,18 +233,35 @@
 
     <section id="page-settings" class="page">
       <div class="card">
-        <h2 class="section-title">Personalizar sectores y preguntas</h2>
-        <div class="notice">Podés personalizar cada pregunta: texto, categoría, criterio de observación, peso en el puntaje y si querés marcarla como crítica. Los cambios quedan guardados en este dispositivo.</div>
-        <div class="grid two" style="margin-top:12px"><label>Bueno desde (%)<input id="goodThreshold" type="number" min="2" max="100" value="90"></label><label>Regular desde (%)<input id="regularThreshold" type="number" min="1" max="99" value="75"></label></div>
-        <div class="small muted" style="margin-top:6px">Ejemplo: Bueno ≥ 90%, Regular 75–89%, Malo &lt; 75%. Podés cambiar estos límites.</div>
+        <h2 class="section-title">Sectores</h2>
+        <div class="notice">Desde acá podés agregar un sector nuevo, elegir uno existente para editarlo o eliminarlo. Si estás conectado, los cambios se sincronizan con Supabase.</div>
         <div class="grid two" style="margin-top:12px">
           <label>Sector a editar<select id="editSector"></select></label>
           <label>Nuevo sector<input id="newSectorName" placeholder="Ej.: Laboratorio"></label>
         </div>
         <div class="row" style="margin-top:9px">
-          <button class="btn primary" id="addSector">Agregar sector</button>
-          <button class="btn danger" id="deleteSector">Eliminar sector</button>
+          <button class="btn primary" id="addSector">+ Agregar sector</button>
+          <button class="btn danger" id="deleteSector">Eliminar sector seleccionado</button>
         </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Criterio de puntuación</h2>
+        <div class="small muted">El puntaje se calcula solo con las preguntas aplicables. N/A no suma ni resta.</div>
+        <div class="weight-grid">
+          <div class="weight-chip"><strong>1</strong><div class="small">Normal</div><div class="small muted">Condición cotidiana.</div></div>
+          <div class="weight-chip"><strong>3</strong><div class="small">Importante</div><div class="small muted">Condición relevante de seguridad.</div></div>
+          <div class="weight-chip"><strong>5</strong><div class="small">Muy alto</div><div class="small muted">Condición de alto impacto.</div></div>
+        </div>
+        <div class="small muted" style="margin-top:10px"><strong>Cumple</strong> obtiene el 100% del peso de esa pregunta. <strong>No cumple</strong> obtiene 0. <strong>N/A</strong> se excluye del cálculo.</div>
+        <div class="grid two" style="margin-top:12px"><label>Bueno desde (%)<input id="goodThreshold" type="number" min="2" max="100" value="90"></label><label>Regular desde (%)<input id="regularThreshold" type="number" min="1" max="99" value="75"></label></div>
+        <div class="score-guide">
+          <div class="score-guide-card good"><div class="title">🙂 Bueno</div><div class="value" id="guideGood">≥ 90%</div></div>
+          <div class="score-guide-card regular"><div class="title">😐 Regular</div><div class="value" id="guideRegular">75–89%</div></div>
+          <div class="score-guide-card bad"><div class="title">☹️ Malo</div><div class="value" id="guideBad">&lt; 75%</div></div>
+        </div>
+        <div class="rule-box"><strong>Regla crítica:</strong> si una pregunta marcada como crítica queda en “No cumple”, el resultado final se muestra como <strong>Malo</strong>, aunque el porcentaje matemático sea alto.</div>
+        <button class="btn primary" id="saveScoreCriteria" style="width:100%;margin-top:12px">Guardar criterio de puntuación</button>
       </div>
 
       <div class="card">
@@ -1462,6 +1487,10 @@ function refreshSectors(){
 function escapeHtml(v){ return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m])); }
 
 function ratingFor(score){const g=Number(config.thresholds?.good)||90,r=Number(config.thresholds?.regular)||75;return score>=g?"Bueno":score>=r?"Regular":"Malo";}
+function auditRatingFor(score,items){
+  const hasCriticalFail=(items||[]).some(x=>x.critical && x.value==="bad");
+  return hasCriticalFail?"Malo":ratingFor(score);
+}
 function ratingClass(x){return x==="Bueno"?"good":x==="Regular"?"regular":"bad";}
 function ratingEmoji(x){return x==="Bueno"?"😄":x==="Regular"?"😐":"☹️";}
 function monthLabel(key){if(!key) return ""; const [y,m]=key.split('-'); return `${m}/${y}`;}
@@ -1630,7 +1659,7 @@ function updateScore(){
   document.getElementById("liveScore").textContent=score+"%";
   document.getElementById("liveBad").textContent=bad;
   document.getElementById("progress").textContent=`${answered}/${answers.length}`;
-  const r=ratingFor(score),el=document.getElementById("liveRating");el.textContent=r;el.className="rating "+ratingClass(r); const bub=document.getElementById("liveBubble"); bub.className="result-bubble "+ratingClass(r); bub.textContent=ratingEmoji(r);
+  const r=auditRatingFor(score,answers),el=document.getElementById("liveRating");el.textContent=r;el.className="rating "+ratingClass(r); const bub=document.getElementById("liveBubble"); bub.className="result-bubble "+ratingClass(r); bub.textContent=ratingEmoji(r);
 }
 document.getElementById("sectorSelect").addEventListener("change",initAudit);
 
@@ -1653,7 +1682,7 @@ document.getElementById("saveAudit").addEventListener("click",()=>{
     fecha:document.getElementById("fecha").value,
     generalObs:document.getElementById("generalObs").value.trim(),
     score,
-    rating:ratingFor(score),
+    rating:auditRatingFor(score,answers),
     bad:answers.filter(a=>a.value==="bad").length,
     followups:JSON.parse(JSON.stringify(followupState)),
     answers:JSON.parse(JSON.stringify(answers)),
@@ -1842,13 +1871,28 @@ function renderDeviations(){
 document.getElementById("devSectorFilter").addEventListener("change",renderDeviations);
 document.getElementById("devStatusFilter").addEventListener("change",renderDeviations);
 
+function updateScoreGuide(){
+  const good=Math.min(100,Math.max(2,Number(document.getElementById("goodThreshold").value)||90));
+  const regular=Math.min(good-1,Math.max(1,Number(document.getElementById("regularThreshold").value)||75));
+  const gg=document.getElementById("guideGood"),gr=document.getElementById("guideRegular"),gb=document.getElementById("guideBad");
+  if(gg)gg.textContent=`≥ ${good}%`; if(gr)gr.textContent=`${regular}–${good-1}%`; if(gb)gb.textContent=`< ${regular}%`;
+}
 function renderSettings(){
   refreshSectors();
   document.getElementById("goodThreshold").value=config.thresholds.good;
   document.getElementById("regularThreshold").value=config.thresholds.regular;
+  updateScoreGuide();
   renderQuestionEditor();
 }
 document.getElementById("editSector").addEventListener("change",renderQuestionEditor);
+document.getElementById("goodThreshold").addEventListener("input",updateScoreGuide);
+document.getElementById("regularThreshold").addEventListener("input",updateScoreGuide);
+document.getElementById("saveScoreCriteria").addEventListener("click",()=>{
+  const good=Math.min(100,Math.max(2,Number(document.getElementById("goodThreshold").value)||90));
+  const regular=Math.min(good-1,Math.max(1,Number(document.getElementById("regularThreshold").value)||75));
+  config.thresholds={good,regular}; saveConfig(); cloudPushCatalog().catch(console.error); updateScoreGuide();
+  alert("Criterio de puntuación guardado.");
+});
 function renderQuestionEditor(){
   const sec=document.getElementById("editSector").value;
   const qs=(config.sectors[sec]||[]).map(normalizeQuestion);
@@ -1904,9 +1948,7 @@ document.getElementById("addSector").addEventListener("click",()=>{
   if(!name)return;
   if(config.sectors[name]){ alert("Ese sector ya existe."); return; }
   config.sectors[name]=[
-    {text:"Orden y limpieza",category:"Orden y limpieza",detail:"Verificar pasillos, accesos y puesto de trabajo.",weight:1,critical:false},
-    {text:"Uso correcto de EPP",category:"EPP",detail:"Verificar uso según riesgo y tarea.",weight:2,critical:false},
-    {text:"Condiciones seguras de máquinas/equipos",category:"Máquinas",detail:"Verificar resguardos, sensores e interbloqueos.",weight:3,critical:true}
+    {text:"Nueva pregunta",category:"General",detail:"Definir qué observar en este sector.",weight:1,critical:false}
   ];
   saveConfig(); cloudPushCatalog().catch(console.error); input.value=""; refreshSectors(); document.getElementById("editSector").value=name; renderQuestionEditor();
 });

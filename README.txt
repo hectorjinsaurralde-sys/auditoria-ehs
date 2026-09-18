@@ -114,3 +114,11 @@ MEJORAS V14:
 - La auditoría sincroniza primero datos y puntaje aunque una foto falle.
 - Fotos al bucket privado audit-photos de Supabase.
 - En PC las fotos se cargan al abrir Ver detalle.
+
+
+MEJORAS V15:
+- Pantalla de Sectores más clara para agregar/eliminar sectores.
+- Editor de preguntas mantiene texto, categoría, criterio, peso y criticidad.
+- Nuevo bloque visible Criterio de puntuación.
+- Explica pesos 1/3/5, Cumple/No cumple/N-A y límites Bueno/Regular/Malo.
+- Regla crítica activa: un No cumple crítico fuerza resultado Malo.
