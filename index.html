@@ -321,7 +321,7 @@
 
 <script>
 const DEFAULT = {
-  "catalogVersion": 11,
+  "catalogVersion": 12,
   "sectors": {
     "Producción · Polipapel": [
       {
@@ -1236,6 +1236,71 @@ const DEFAULT = {
         "critical": false
       }
     ],
+    "Taller de Moldes": [
+      {
+        "text": "¿El sector y sus vías de circulación se encuentran limpios, ordenados y libres de obstrucciones?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar pasillos, accesos y espacios de trabajo.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Los bancos de trabajo se encuentran ordenados y en condiciones seguras?",
+        "category": "Orden y limpieza",
+        "detail": "Verificar herramientas, piezas y materiales fuera de lugar.",
+        "weight": 1,
+        "critical": false
+      },
+      {
+        "text": "¿Las matrices, piezas y materiales se encuentran almacenados de manera estable y segura?",
+        "category": "Almacenamiento",
+        "detail": "Verificar riesgo de caída, desplazamiento, vuelco o aprisionamiento.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Los elementos de izaje se encuentran identificados y en condiciones visibles adecuadas?",
+        "category": "Izaje",
+        "detail": "Observar eslingas, aparejos, cadenas, ganchos y accesorios.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los equipos y herramientas presentan sus protecciones y dispositivos de seguridad en condiciones?",
+        "category": "Máquinas y equipos",
+        "detail": "Verificar guardas y dispositivos de seguridad visibles, sin anulaciones evidentes.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Las instalaciones y tableros eléctricos presentan condiciones seguras?",
+        "category": "Eléctrico",
+        "detail": "Verificar cierre, daños visibles y accesos libres.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los extintores y elementos de emergencia se encuentran visibles y accesibles?",
+        "category": "Emergencias",
+        "detail": "Verificar que el acceso permanezca libre de materiales y equipos.",
+        "weight": 5,
+        "critical": true
+      },
+      {
+        "text": "¿Los aceites, lubricantes y productos químicos se encuentran identificados y contenidos?",
+        "category": "Productos químicos",
+        "detail": "Verificar contención, estado de envases, almacenamiento y ausencia de derrames.",
+        "weight": 3,
+        "critical": false
+      },
+      {
+        "text": "¿Durante la recorrida se observa uso adecuado de EPP y ausencia de actos inseguros relevantes?",
+        "category": "EPP y comportamiento",
+        "detail": "Realizar una observación general de las tareas y conductas del sector.",
+        "weight": 3,
+        "critical": false
+      }
+    ],
     "Exterior": [
       {
         "text": "¿Las calles, accesos y sectores exteriores se encuentran limpios y ordenados?",
@@ -1427,8 +1492,11 @@ function normalizeConfig(c){
     out=JSON.parse(JSON.stringify(DEFAULT));
     out.thresholds=savedThresholds;
   }
+  if(Number(out.catalogVersion||0)<12 && !out.sectors["Taller de Moldes"]){
+    out.sectors["Taller de Moldes"]=JSON.parse(JSON.stringify(DEFAULT.sectors["Taller de Moldes"]));
+  }
   Object.keys(out.sectors).forEach(k=>out.sectors[k]=(out.sectors[k]||[]).map(normalizeQuestion));
-  out.catalogVersion=11;
+  out.catalogVersion=Math.max(12,Number(out.catalogVersion)||0);
   if(!out.thresholds) out.thresholds={good:90,regular:75};
   out.thresholds.good=Math.min(100,Math.max(2,Number(out.thresholds.good)||90));
   out.thresholds.regular=Math.min(out.thresholds.good-1,Math.max(1,Number(out.thresholds.regular)||75));
@@ -1458,6 +1526,7 @@ saveDeviations();
 
 function safeParse(s, fallback){ try{return s?JSON.parse(s):JSON.parse(JSON.stringify(fallback));}catch{return JSON.parse(JSON.stringify(fallback));} }
 function saveConfig(){ localStorage.setItem(LS_CONFIG, JSON.stringify(config)); }
+function touchCatalogVersion(){ config.catalogVersion=Math.max(12,Number(config.catalogVersion)||0)+1; }
 function saveAudits(){ localStorage.setItem(LS_AUDITS, JSON.stringify(audits)); }
 function saveDeviations(){ localStorage.setItem(LS_DEVIATIONS, JSON.stringify(deviations)); }
 function todayLocal(){ const d=new Date(); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-"); }
@@ -1949,22 +2018,30 @@ document.getElementById("saveQuestions").addEventListener("click",()=>{
     critical:card.querySelector(".qe-critical").checked
   })).filter(q=>q.text);
   if(!vals.length){ alert("El sector debe tener al menos una pregunta."); return; }
-  config.sectors[sec]=vals;const good=Math.min(100,Math.max(2,Number(document.getElementById("goodThreshold").value)||90));const regular=Math.min(good-1,Math.max(1,Number(document.getElementById("regularThreshold").value)||75));config.thresholds={good,regular};saveConfig();cloudPushCatalog().catch(console.error);refreshSectors();initAudit();alert("Preguntas y valoración guardadas.");
+  config.sectors[sec]=vals;const good=Math.min(100,Math.max(2,Number(document.getElementById("goodThreshold").value)||90));const regular=Math.min(good-1,Math.max(1,Number(document.getElementById("regularThreshold").value)||75));config.thresholds={good,regular};touchCatalogVersion();saveConfig();cloudPushCatalog().catch(e=>{console.error(e);cloudSetStatus("Cambios locales · nube pendiente","warn");});refreshSectors();initAudit();alert("Preguntas y valoración guardadas.");
 });
-document.getElementById("addSector").addEventListener("click",()=>{
+document.getElementById("addSector").addEventListener("click",async()=>{
   const input=document.getElementById("newSectorName");
-  const name=input.value.trim();
-  if(!name)return;
-  if(config.sectors[name]){ alert("Ese sector ya existe."); return; }
+  let name=input.value.trim();
+  if(!name){
+    const typed=prompt("Nombre del nuevo sector:","");
+    if(typed===null)return;
+    name=typed.trim();
+  }
+  if(!name){ alert("Escribí el nombre del sector."); return; }
+  const existing=Object.keys(config.sectors).find(k=>k.toLowerCase()===name.toLowerCase());
+  if(existing){ alert(`El sector “${existing}” ya existe.`); document.getElementById("editSector").value=existing; renderQuestionEditor(); return; }
   config.sectors[name]=[
     {text:"Nueva pregunta",category:"General",detail:"Definir qué observar en este sector.",weight:1,critical:false}
   ];
-  saveConfig(); cloudPushCatalog().catch(console.error); input.value=""; refreshSectors(); document.getElementById("editSector").value=name; renderQuestionEditor();
+  touchCatalogVersion(); saveConfig(); input.value=""; refreshSectors(); document.getElementById("editSector").value=name; renderQuestionEditor(); initAudit();
+  try{await cloudPushCatalog(); alert(`Sector “${name}” agregado y sincronizado.`);}
+  catch(e){console.error(e);cloudSetStatus("Sector guardado local · nube pendiente","warn");alert(`Sector “${name}” agregado en este dispositivo. La sincronización con la nube quedó pendiente.`);}
 });
 document.getElementById("deleteSector").addEventListener("click",()=>{
   const sec=document.getElementById("editSector").value;
   if(Object.keys(config.sectors).length<=1){ alert("Debe quedar al menos un sector."); return; }
-  if(confirm(`¿Eliminar el sector "${sec}"?`)){ delete config.sectors[sec]; saveConfig(); cloudPushCatalog().catch(console.error); refreshSectors(); renderQuestionEditor(); initAudit(); }
+  if(confirm(`¿Eliminar el sector "${sec}"?`)){ delete config.sectors[sec]; touchCatalogVersion(); saveConfig(); cloudPushCatalog().catch(e=>{console.error(e);cloudSetStatus("Cambios locales · nube pendiente","warn");}); refreshSectors(); renderQuestionEditor(); initAudit(); }
 });
 
 document.getElementById("exportData").addEventListener("click",()=>{
@@ -2125,14 +2202,14 @@ async function cloudPushCatalog(){
   await cloudUpsert('sectors',sectors);
   for(const name of Object.keys(config.sectors)){const sid=config.cloudSectorIds[name];await cloudRest('questions?sector_id=eq.'+sid,{method:'DELETE'});const rows=config.sectors[name].map((q,i)=>({id:q.id,sector_id:sid,text:q.text,category:q.category||'General',detail:q.detail||'',weight:Number(q.weight)||1,critical:!!q.critical,sort_order:i,active:true}));await cloudUpsert('questions',rows);}
   await cloudRest('app_settings?key=in.(score_thresholds,catalog_version)',{method:'DELETE'});
-  await cloudRest('app_settings',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([{key:'score_thresholds',value:config.thresholds||{good:90,regular:75}},{key:'catalog_version',value:Number(config.catalogVersion)||11}])});saveConfig();
+  await cloudRest('app_settings',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([{key:'score_thresholds',value:config.thresholds||{good:90,regular:75}},{key:'catalog_version',value:Number(config.catalogVersion)||12}])});saveConfig();
 }
 async function cloudPullCatalog(){const sectors=await cloudRest('sectors?select=*&active=eq.true&order=sort_order.asc');if(!sectors?.length)return false;const questions=await cloudRest('questions?select=*&active=eq.true&order=sort_order.asc');const settings=await cloudRest('app_settings?select=*&key=eq.score_thresholds');const newS={},ids={};sectors.forEach(s=>{ids[s.name]=s.id;newS[s.name]=(questions||[]).filter(q=>q.sector_id===s.id).map(q=>({id:q.id,text:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical}));});config.sectors=newS;config.cloudSectorIds=ids;if(settings?.[0]?.value)config.thresholds=settings[0].value;saveConfig();refreshSectors();initAudit();return true;}
 async function cloudFullSync(){
   if(cloudBusy)return;cloudBusy=true;cloudSetStatus('Sincronizando datos…','warn');
   try{
     const remoteVersion=await cloudRest('app_settings?select=value&key=eq.catalog_version');const rv=Number(remoteVersion?.[0]?.value||0);const localVersion=Number(config.catalogVersion)||0;
-    if(!rv && localVersion){await cloudPushCatalog();}else if(rv>localVersion){await cloudPullCatalog();config.catalogVersion=rv;saveConfig();}
+    if(localVersion>rv){await cloudPushCatalog();}else if(rv>localVersion){await cloudPullCatalog();config.catalogVersion=rv;saveConfig();}
     await cloudPushRecords();
     await cloudPullRecords();
     renderHistory();renderDeviations();renderCharts();

@@ -131,3 +131,11 @@ MEJORAS V16:
 - Los hallazgos anteriores se muestran solo como referencia al auditar.
 - Cada No cumple queda registrado como una foto histórica independiente.
 - El tablero usa hallazgos del mes y reincidencias, sin abiertos/cerrados.
+
+
+MEJORAS V17:
+- Se agrega el sector “Taller de Moldes” con una base de preguntas similar a Matricería, totalmente editable.
+- Se corrige “+ Agregar sector”: si el campo está vacío solicita el nombre y confirma el alta.
+- Cada alta, edición o eliminación de sectores/preguntas incrementa la versión del catálogo.
+- La sincronización del catálogo ahora funciona en ambos sentidos: si el catálogo local es más nuevo, lo sube a Supabase; si el remoto es más nuevo, lo descarga.
+- Un sector nuevo queda disponible en PC y celular luego de sincronizar.
