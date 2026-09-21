@@ -1,3 +1,8 @@
+VERSIÓN 19
+- Tablero con filtros por sector, semana, mes y desde reinicio.
+- Indicador visible de versión.
+- Caché corregida: el HTML se actualiza desde la red y evita quedar pegado a una versión anterior.
+
 AUDITORÍA EHS - PWA
 
 Archivos:
