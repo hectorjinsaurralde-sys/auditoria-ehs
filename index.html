@@ -277,23 +277,31 @@
     <section id="page-charts" class="page">
       <div class="card">
         <div class="row between">
-          <div><h2 class="section-title" style="margin-bottom:3px">Tablero de gestión EHS</h2><div class="small muted">Resultado mensual, evolución, ranking, desvíos y reincidencias.</div></div>
+          <div><h2 class="section-title" style="margin-bottom:3px">Tablero de gestión EHS</h2><div class="small muted">Filtrá por sector, mes o semana para ver cómo viene cada área.</div></div>
           <button class="btn secondary" id="refreshDashboard">Actualizar</button>
         </div>
         <div class="grid two" style="margin-top:12px">
-          <label>Mes de gestión<select id="chartMonthFilter"><option value="">Seleccionar mes</option></select></label>
-          <label>Sector para evolución<select id="chartSectorFilter"><option value="">Todos</option></select></label>
+          <label>Período<select id="chartPeriodMode"><option value="week">Semana</option><option value="month">Mes</option><option value="reset">Desde reinicio</option><option value="all">Todo el historial</option></select></label>
+          <label>Sector<select id="chartSectorFilter"><option value="">Todos los sectores</option></select></label>
+          <label id="chartMonthWrap">Mes<select id="chartMonthFilter"><option value="">Seleccionar mes</option></select></label>
+          <label id="chartWeekWrap" class="hidden">Semana<select id="chartWeekFilter"><option value="">Seleccionar semana</option></select></label>
+        </div>
+        <div class="rule-box" style="margin-top:12px">
+          <div class="row between">
+            <div><strong>Inicio de indicadores:</strong> <span id="dashboardResetLabel">Sin reinicio definido</span><div class="small muted">Reiniciar no borra auditorías ni hallazgos del Historial; solamente empieza una nueva etapa para el tablero.</div></div>
+            <div class="row" style="gap:8px"><button class="btn secondary" id="resetDashboardNow">Reiniciar desde hoy</button><button class="btn secondary" id="clearDashboardReset">Ver historial completo</button></div>
+          </div>
         </div>
         <div class="dash-kpis" id="dashboardKpis"></div>
         <div class="dashboard-note" id="dashboardInsight">El tablero se completa automáticamente con las auditorías guardadas.</div>
       </div>
       <div class="chart-grid">
-        <div class="chart-box"><div class="row between"><div><strong>Ranking mensual por sector</strong><div class="chart-note">Promedio del mes y variación respecto del mes anterior.</div></div></div><div id="sectorRanking"></div></div>
-        <div class="chart-box"><div class="row between"><div><strong>Resultado mensual por sector</strong><div class="chart-note">Verde, amarillo o rojo según el promedio del sector.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadMonthlyChart">Descargar gráfico</button></div></div><canvas id="monthlySectorChart" class="chart" width="900" height="320"></canvas></div>
-        <div class="chart-box"><div class="row between"><div><strong>Evolución mensual del puntaje</strong><div class="chart-note">Elegí un sector o mirá el promedio general.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadTrendChart">Descargar gráfico</button></div></div><canvas id="trendChart" class="chart" width="900" height="280"></canvas></div>
-        <div class="chart-box"><div class="row between"><div><strong>Hallazgos por sector</strong><div class="chart-note">Cantidad de hallazgos registrados por sector en el mes seleccionado.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadDeviationChart">Descargar gráfico</button></div></div><canvas id="deviationChart" class="chart" width="900" height="250"></canvas></div>
-        <div class="chart-box"><div class="row between"><div><strong>Resultado por categoría</strong><div class="chart-note">Promedio de las categorías auditadas durante el mes.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadCategoryChart">Descargar gráfico</button></div></div><canvas id="categoryChart" class="chart" width="900" height="320"></canvas></div>
-        <div class="chart-box"><strong>Resumen mensual por sector</strong><div id="monthlySummaryTable"></div></div>
+        <div class="chart-box"><div class="row between"><div><strong id="rankingTitle">Resultados por sector</strong><div class="chart-note" id="rankingNote">Promedio y variación respecto del período anterior.</div></div></div><div id="sectorRanking"></div></div>
+        <div class="chart-box"><div class="row between"><div><strong id="periodChartTitle">Resultado del período por sector</strong><div class="chart-note">Verde, amarillo o rojo según el promedio del período filtrado.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadMonthlyChart">Descargar gráfico</button></div></div><canvas id="monthlySectorChart" class="chart" width="900" height="320"></canvas></div>
+        <div class="chart-box"><div class="row between"><div><strong id="trendTitle">Evolución del puntaje</strong><div class="chart-note" id="trendNote">La escala cambia según el período elegido.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadTrendChart">Descargar gráfico</button></div></div><canvas id="trendChart" class="chart" width="900" height="280"></canvas></div>
+        <div class="chart-box"><div class="row between"><div><strong>Hallazgos por sector</strong><div class="chart-note">Cantidad de hallazgos dentro del período filtrado.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadDeviationChart">Descargar gráfico</button></div></div><canvas id="deviationChart" class="chart" width="900" height="250"></canvas></div>
+        <div class="chart-box"><div class="row between"><div><strong>Resultado por categoría</strong><div class="chart-note">Promedio de las categorías dentro del período filtrado.</div></div><div class="chart-actions"><button class="btn secondary" id="downloadCategoryChart">Descargar gráfico</button></div></div><canvas id="categoryChart" class="chart" width="900" height="320"></canvas></div>
+        <div class="chart-box"><strong>Resumen del período por sector</strong><div id="monthlySummaryTable"></div></div>
       </div>
     </section>
 
@@ -321,7 +329,8 @@
 
 <script>
 const DEFAULT = {
-  "catalogVersion": 12,
+  "catalogVersion": 13,
+  "dashboardResetDate": "2026-09-21",
   "sectors": {
     "Producción · Polipapel": [
       {
@@ -1495,8 +1504,12 @@ function normalizeConfig(c){
   if(Number(out.catalogVersion||0)<12 && !out.sectors["Taller de Moldes"]){
     out.sectors["Taller de Moldes"]=JSON.parse(JSON.stringify(DEFAULT.sectors["Taller de Moldes"]));
   }
+  if(Number(out.catalogVersion||0)<13 && !out.dashboardResetDate){
+    out.dashboardResetDate="2026-09-21";
+  }
   Object.keys(out.sectors).forEach(k=>out.sectors[k]=(out.sectors[k]||[]).map(normalizeQuestion));
-  out.catalogVersion=Math.max(12,Number(out.catalogVersion)||0);
+  out.catalogVersion=Math.max(13,Number(out.catalogVersion)||0);
+  out.dashboardResetDate=String(out.dashboardResetDate||"");
   if(!out.thresholds) out.thresholds={good:90,regular:75};
   out.thresholds.good=Math.min(100,Math.max(2,Number(out.thresholds.good)||90));
   out.thresholds.regular=Math.min(out.thresholds.good-1,Math.max(1,Number(out.thresholds.regular)||75));
@@ -1526,7 +1539,7 @@ saveDeviations();
 
 function safeParse(s, fallback){ try{return s?JSON.parse(s):JSON.parse(JSON.stringify(fallback));}catch{return JSON.parse(JSON.stringify(fallback));} }
 function saveConfig(){ localStorage.setItem(LS_CONFIG, JSON.stringify(config)); }
-function touchCatalogVersion(){ config.catalogVersion=Math.max(12,Number(config.catalogVersion)||0)+1; }
+function touchCatalogVersion(){ config.catalogVersion=Math.max(13,Number(config.catalogVersion)||0)+1; }
 function saveAudits(){ localStorage.setItem(LS_AUDITS, JSON.stringify(audits)); }
 function saveDeviations(){ localStorage.setItem(LS_DEVIATIONS, JSON.stringify(deviations)); }
 function todayLocal(){ const d=new Date(); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-"); }
@@ -1897,34 +1910,75 @@ function renderHistory(){
 
 
 function prevMonthKey(month){if(!month)return '';const [y,m]=month.split('-').map(Number);const d=new Date(Date.UTC(y,m-1,1));d.setUTCMonth(d.getUTCMonth()-1);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;}
-function auditsForMonth(month){return audits.filter(a=>(a.fecha||'').slice(0,7)===month);}
-function deviationCountsForMonth(month){const rows=deviations.filter(d=>(d.firstDetected||d.lastSeen||'').slice(0,7)===month);return {total:rows.length,recurrent:rows.filter(d=>(Number(d.timesSeen)||1)>1).length};}
-function sectorStats(month){const cur=auditsForMonth(month),prev=auditsForMonth(prevMonthKey(month));const names=[...new Set(cur.map(a=>a.sector))].sort();return names.map(name=>{const ca=cur.filter(a=>a.sector===name),pa=prev.filter(a=>a.sector===name),avg=average(ca.map(a=>a.score)),prevAvg=pa.length?average(pa.map(a=>a.score)):null,findings=deviations.filter(d=>d.sector===name&&(d.firstDetected||d.lastSeen||'').slice(0,7)===month).length,recurrent=deviations.filter(d=>d.sector===name&&(d.firstDetected||d.lastSeen||'').slice(0,7)===month&&(Number(d.timesSeen)||1)>1).length;return {name,count:ca.length,avg,prevAvg,delta:prevAvg===null?null:avg-prevAvg,findings,recurrent,rating:ratingFromAvg(avg)};}).sort((a,b)=>b.avg-a.avg||a.name.localeCompare(b.name));}
-function categoryStats(month){const rows=auditsForMonth(month),agg={};rows.forEach(a=>(a.answers||[]).forEach(x=>{if(!x||!x.value||x.value==='na')return;const cat=x.category||'General',w=Number(x.weight)||1;agg[cat]=agg[cat]||{ok:0,total:0};agg[cat].total+=w;if(x.value==='ok')agg[cat].ok+=w;}));return Object.entries(agg).map(([name,v])=>({name,score:v.total?Math.round(v.ok/v.total*100):0})).sort((a,b)=>b.score-a.score);}
+function ymdDate(s){return new Date(String(s||todayLocal())+'T12:00:00');}
+function formatYmd(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+function addDaysYmd(s,n){const d=ymdDate(s);d.setDate(d.getDate()+n);return formatYmd(d);}
+function mondayYmd(s){const d=ymdDate(s);const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return formatYmd(d);}
+function shortDate(s){if(!s)return '';const d=ymdDate(s);return d.toLocaleDateString('es-AR',{day:'2-digit',month:'short'}).replace('.','');}
+function weekLabel(start){return `${shortDate(start)} – ${shortDate(addDaysYmd(start,6))}`;}
+function inDateRange(date,start,endExclusive){const x=String(date||'');return (!start||x>=start)&&(!endExclusive||x<endExclusive);}
+function currentDashboardPeriod(){
+  const mode=document.getElementById('chartPeriodMode')?.value||'month';
+  const month=document.getElementById('chartMonthFilter')?.value||todayLocal().slice(0,7);
+  const week=document.getElementById('chartWeekFilter')?.value||mondayYmd(todayLocal());
+  if(mode==='week') return {mode,start:week,end:addDaysYmd(week,7),label:`Semana ${weekLabel(week)}`};
+  if(mode==='month'){const [y,m]=month.split('-').map(Number);const next=m===12?`${y+1}-01-01`:`${y}-${String(m+1).padStart(2,'0')}-01`;return {mode,start:`${month}-01`,end:next,label:`Mes ${monthLabel(month)}`};}
+  if(mode==='reset'){const start=config.dashboardResetDate||todayLocal();return {mode,start,end:'',label:`Desde ${shortDate(start)}`};}
+  return {mode,start:'',end:'',label:'Todo el historial'};
+}
+function auditsForPeriod(period,sector){return audits.filter(a=>inDateRange(a.fecha,period.start,period.end)&&(!sector||a.sector===sector));}
+function findingsForPeriod(period,sector){return deviations.filter(d=>{const dt=d.firstDetected||d.lastSeen||'';return inDateRange(dt,period.start,period.end)&&(!sector||d.sector===sector);});}
+function previousPeriod(period){
+  if(period.mode==='week'){const s=addDaysYmd(period.start,-7);return {mode:'week',start:s,end:period.start,label:'Semana anterior'};}
+  if(period.mode==='month'){const pm=prevMonthKey(period.start.slice(0,7));const [y,m]=pm.split('-').map(Number);const next=m===12?`${y+1}-01-01`:`${y}-${String(m+1).padStart(2,'0')}-01`;return {mode:'month',start:`${pm}-01`,end:next,label:'Mes anterior'};}
+  return null;
+}
+function sectorStatsForPeriod(period,sector){
+  const cur=auditsForPeriod(period,sector),prev=previousPeriod(period),prevRows=prev?auditsForPeriod(prev,sector):[];
+  const names=[...new Set(cur.map(a=>a.sector))].sort();
+  return names.map(name=>{const ca=cur.filter(a=>a.sector===name),pa=prevRows.filter(a=>a.sector===name),avg=average(ca.map(a=>a.score)),prevAvg=pa.length?average(pa.map(a=>a.score)):null;const hf=findingsForPeriod(period,name);return {name,count:ca.length,avg,prevAvg,delta:prevAvg===null?null:avg-prevAvg,findings:hf.length,recurrent:hf.filter(d=>(Number(d.timesSeen)||1)>1).length,rating:ratingFromAvg(avg)};}).sort((a,b)=>b.avg-a.avg||a.name.localeCompare(b.name));
+}
+function categoryStatsForPeriod(period,sector){const rows=auditsForPeriod(period,sector),agg={};rows.forEach(a=>(a.answers||[]).forEach(x=>{if(!x||!x.value||x.value==='na')return;const cat=x.category||'General',w=Number(x.weight)||1;agg[cat]=agg[cat]||{ok:0,total:0};agg[cat].total+=w;if(x.value==='ok')agg[cat].ok+=w;}));return Object.entries(agg).map(([name,v])=>({name,score:v.total?Math.round(v.ok/v.total*100):0})).sort((a,b)=>b.score-a.score);}
 function drawPercentBars(canvas,labels,values,colors){const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.font='12px Arial';if(!labels.length){ctx.fillStyle='#64748b';ctx.fillText('No hay datos para mostrar.',20,30);return;}const pad={l:52,r:18,t:20,b:70},gw=W-pad.l-pad.r,gh=H-pad.t-pad.b;ctx.strokeStyle='#d9e1e4';for(let i=0;i<=5;i++){const y=pad.t+gh-gh*i/5;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.fillStyle='#64748b';ctx.fillText(String(i*20),12,y+4);}const slot=gw/labels.length,bw=Math.min(75,slot*.55);labels.forEach((lab,i)=>{const v=Math.max(0,Math.min(100,Number(values[i])||0)),h=v*gh/100,x=pad.l+slot*i+(slot-bw)/2,y=pad.t+gh-h;ctx.fillStyle=colors[i]||'#0f766e';ctx.fillRect(x,y,bw,h);ctx.fillStyle='#334155';ctx.fillText(v+'%',x+bw/2-12,y-7);ctx.save();ctx.translate(x+bw/2,H-18);ctx.rotate(-.35);ctx.fillText(lab,0,0);ctx.restore();});}
-function drawCountBars(canvas,labels,values,colors){const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.font='14px Arial';if(!labels.length){ctx.fillStyle='#64748b';ctx.fillText('No hay datos para mostrar.',20,30);return;}const max=Math.max(1,...values),pad={l:55,r:20,t:25,b:45},gw=W-pad.l-pad.r,gh=H-pad.t-pad.b,slot=gw/labels.length,bw=Math.min(170,slot*.5);labels.forEach((lab,i)=>{const v=Number(values[i])||0,h=v*gh/max,x=pad.l+slot*i+(slot-bw)/2,y=pad.t+gh-h;ctx.fillStyle=colors[i];ctx.fillRect(x,y,bw,h);ctx.fillStyle='#334155';ctx.font='bold 20px Arial';ctx.fillText(String(v),x+bw/2-8,y-8);ctx.font='14px Arial';ctx.fillText(lab,x+bw/2-28,H-18);});}
-function renderRanking(month){const stats=sectorStats(month),wrap=document.getElementById('sectorRanking');if(!stats.length){wrap.innerHTML='<p class="muted">No hay auditorías en el mes seleccionado.</p>';return;}const rows=stats.map((s,i)=>{const t=s.delta===null?'—':s.delta>0?`▲ +${s.delta}`:s.delta<0?`▼ ${s.delta}`:'● 0',tc=s.delta===null?'trend-flat':s.delta>0?'trend-up':s.delta<0?'trend-down':'trend-flat';return `<tr><td><strong>${i+1}</strong></td><td>${escapeHtml(s.name)}</td><td>${s.count}</td><td><strong>${s.avg}%</strong></td><td><span class="rating ${ratingClass(s.rating)}">${ratingEmoji(s.rating)} ${s.rating}</span></td><td class="${tc}">${t}</td><td>${s.findings}</td><td>${s.recurrent}</td></tr>`;}).join('');wrap.innerHTML=`<div style="overflow-x:auto"><table class="rank-table"><thead><tr><th>#</th><th>Sector</th><th>Aud.</th><th>Promedio</th><th>Resultado</th><th>Vs mes ant.</th><th>Hallazgos</th><th>Reinc.</th></tr></thead><tbody>${rows}</tbody></table></div>`;}
-function renderDashboardKpis(month){const ma=auditsForMonth(month),avg=average(ma.map(a=>a.score)),res=ratingFromAvg(avg),dc=deviationCountsForMonth(month),sectors=[...new Set(ma.map(a=>a.sector))].length;document.getElementById('dashboardKpis').innerHTML=`<div class="dash-kpi"><div class="l">Auditorías del mes</div><div class="v">${ma.length}</div></div><div class="dash-kpi ${ratingClass(res)}"><div class="l">Promedio mensual</div><div class="v">${ma.length?avg+'%':'—'}</div><div class="small">${ma.length?ratingEmoji(res)+' '+res:''}</div></div><div class="dash-kpi bad"><div class="l">Hallazgos del mes</div><div class="v">${dc.total}</div></div><div class="dash-kpi regular"><div class="l">Reincidencias</div><div class="v">${dc.recurrent}</div></div><div class="dash-kpi"><div class="l">Sectores auditados</div><div class="v">${sectors}</div></div>`;const ranking=sectorStats(month);let insight='Todavía no hay auditorías cargadas para este mes.';if(ranking.length){const best=ranking[0],worst=ranking[ranking.length-1];insight=`Mejor resultado: ${best.name} ${best.avg}%. Sector a priorizar: ${worst.name} ${worst.avg}%. ${dc.recurrent?`Hay ${dc.recurrent} hallazgo(s) reincidente(s) en el mes.`:'No hay reincidencias registradas en el mes.'}`;}document.getElementById('dashboardInsight').textContent=insight;}
+function drawCountBars(canvas,labels,values,colors){const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.font='14px Arial';if(!labels.length){ctx.fillStyle='#64748b';ctx.fillText('No hay datos para mostrar.',20,30);return;}const max=Math.max(1,...values),pad={l:55,r:20,t:25,b:45},gw=W-pad.l-pad.r,gh=H-pad.t-pad.b,slot=gw/labels.length,bw=Math.min(170,slot*.5);labels.forEach((lab,i)=>{const v=Number(values[i])||0,h=v*gh/max,x=pad.l+slot*i+(slot-bw)/2,y=pad.t+gh-h;ctx.fillStyle=colors[i]||'#ef4444';ctx.fillRect(x,y,bw,h);ctx.fillStyle='#334155';ctx.font='bold 20px Arial';ctx.fillText(String(v),x+bw/2-8,y-8);ctx.font='14px Arial';ctx.fillText(lab,x+bw/2-28,H-18);});}
+function renderRanking(period,sector){const stats=sectorStatsForPeriod(period,sector),wrap=document.getElementById('sectorRanking');if(!stats.length){wrap.innerHTML='<p class="muted">No hay auditorías para el período seleccionado.</p>';return;}const rows=stats.map((s,i)=>{const t=s.delta===null?'—':s.delta>0?`▲ +${s.delta}`:s.delta<0?`▼ ${s.delta}`:'● 0',tc=s.delta===null?'trend-flat':s.delta>0?'trend-up':s.delta<0?'trend-down':'trend-flat';return `<tr><td><strong>${i+1}</strong></td><td>${escapeHtml(s.name)}</td><td>${s.count}</td><td><strong>${s.avg}%</strong></td><td><span class="rating ${ratingClass(s.rating)}">${ratingEmoji(s.rating)} ${s.rating}</span></td><td class="${tc}">${t}</td><td>${s.findings}</td><td>${s.recurrent}</td></tr>`;}).join('');wrap.innerHTML=`<div style="overflow-x:auto"><table class="rank-table"><thead><tr><th>#</th><th>Sector</th><th>Aud.</th><th>Promedio</th><th>Resultado</th><th>Vs período ant.</th><th>Hallazgos</th><th>Reinc.</th></tr></thead><tbody>${rows}</tbody></table></div>`;}
+function renderDashboardKpis(period,sector){const rows=auditsForPeriod(period,sector),avg=average(rows.map(a=>a.score)),res=ratingFromAvg(avg),hf=findingsForPeriod(period,sector),sectors=[...new Set(rows.map(a=>a.sector))].length;document.getElementById('dashboardKpis').innerHTML=`<div class="dash-kpi"><div class="l">Auditorías del período</div><div class="v">${rows.length}</div></div><div class="dash-kpi ${ratingClass(res)}"><div class="l">Promedio</div><div class="v">${rows.length?avg+'%':'—'}</div><div class="small">${rows.length?ratingEmoji(res)+' '+res:''}</div></div><div class="dash-kpi bad"><div class="l">Hallazgos</div><div class="v">${hf.length}</div></div><div class="dash-kpi regular"><div class="l">Reincidencias</div><div class="v">${hf.filter(d=>(Number(d.timesSeen)||1)>1).length}</div></div><div class="dash-kpi"><div class="l">Sectores auditados</div><div class="v">${sectors}</div></div>`;const stats=sectorStatsForPeriod(period,sector);let insight=`${period.label}. Todavía no hay auditorías cargadas.`;if(stats.length){if(sector){const x=stats[0];insight=`${period.label} · ${x.name}: ${x.avg}% (${x.rating}), ${x.count} auditoría(s) y ${x.findings} hallazgo(s).`;}else{const best=stats[0],worst=stats[stats.length-1];insight=`${period.label}. Mejor resultado: ${best.name} ${best.avg}%. Menor resultado: ${worst.name} ${worst.avg}%.`;}}document.getElementById('dashboardInsight').textContent=insight;}
+function buildPeriodSummary(period,sector){const filtered=auditsForPeriod(period,sector);if(!filtered.length)return '<p class="muted">No hay auditorías para el período seleccionado.</p>';const sectors=[...new Set(filtered.map(a=>a.sector))].sort();const rows=sectors.map(sec=>{const arr=filtered.filter(a=>a.sector===sec),avg=average(arr.map(a=>a.score)),res=ratingFromAvg(avg);return `<tr><td>${escapeHtml(sec)}</td><td>${arr.length}</td><td>${avg}%</td><td><span class="rating ${ratingClass(res)}">${escapeHtml(res)} ${ratingEmoji(res)}</span></td></tr>`;}).join('');return `<table class="summary-table"><thead><tr><th>Sector</th><th>Auditorías</th><th>Promedio</th><th>Resultado</th></tr></thead><tbody>${rows}</tbody></table>`;}
+function trendData(period,sector){
+  const rows=auditsForPeriod(period,sector),groups={};let title='Evolución del puntaje',note='';
+  if(period.mode==='week'){rows.forEach(a=>{const k=a.fecha;(groups[k]=groups[k]||[]).push(Number(a.score)||0);});title='Evolución diaria de la semana';note='Promedio por día dentro de la semana seleccionada.';return {title,note,labels:Object.keys(groups).sort().map(shortDate),values:Object.keys(groups).sort().map(k=>average(groups[k]))};}
+  if(period.mode==='month'||period.mode==='reset'){rows.forEach(a=>{const k=mondayYmd(a.fecha);(groups[k]=groups[k]||[]).push(Number(a.score)||0);});title='Evolución semanal del puntaje';note=period.mode==='month'?'Promedio por semana dentro del mes seleccionado.':'Promedio por semana desde el reinicio de indicadores.';return {title,note,labels:Object.keys(groups).sort().map(k=>'Sem. '+shortDate(k)),values:Object.keys(groups).sort().map(k=>average(groups[k]))};}
+  rows.forEach(a=>{const k=(a.fecha||'').slice(0,7);if(k)(groups[k]=groups[k]||[]).push(Number(a.score)||0);});title='Evolución mensual del puntaje';note='Promedio por mes de todo el historial.';return {title,note,labels:Object.keys(groups).sort().map(monthLabel),values:Object.keys(groups).sort().map(k=>average(groups[k]))};
+}
+function refreshDashboardFilters(){
+  const monthSel=document.getElementById('chartMonthFilter'),weekSel=document.getElementById('chartWeekFilter'),mode=document.getElementById('chartPeriodMode');
+  const currentMonth=todayLocal().slice(0,7),months=[...new Set([currentMonth,...audits.map(a=>(a.fecha||'').slice(0,7)).filter(Boolean)])].sort();const oldM=monthSel.value;monthSel.innerHTML=months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');monthSel.value=months.includes(oldM)?oldM:currentMonth;
+  const currentWeek=mondayYmd(todayLocal()),weeks=[...new Set([currentWeek,...audits.map(a=>a.fecha?mondayYmd(a.fecha):'').filter(Boolean)])].sort().reverse();const oldW=weekSel.value;weekSel.innerHTML=weeks.slice(0,30).map(w=>`<option value="${w}">${weekLabel(w)}</option>`).join('');weekSel.value=weeks.includes(oldW)?oldW:currentWeek;
+  document.getElementById('chartMonthWrap').classList.toggle('hidden',mode.value!=='month');document.getElementById('chartWeekWrap').classList.toggle('hidden',mode.value!=='week');
+  const reset=config.dashboardResetDate||'';document.getElementById('dashboardResetLabel').textContent=reset?`${shortDate(reset)} (${reset})`:'Sin reinicio definido';document.getElementById('clearDashboardReset').classList.toggle('hidden',!reset);
+}
 function renderCharts(){
-  refreshSectors();
-  const monthSel=document.getElementById('chartMonthFilter'),sectorSel=document.getElementById('chartSectorFilter');
-  const months=[...new Set(audits.map(a=>(a.fecha||'').slice(0,7)).filter(Boolean))].sort();
-  const oldM=monthSel.value;monthSel.innerHTML=months.length?months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join(''):'<option value="">Sin datos</option>';
-  if(months.includes(oldM))monthSel.value=oldM;else if(months.length)monthSel.value=months[months.length-1];
-  const selectedMonth=monthSel.value||'',sec=sectorSel.value||'';
-  if(!selectedMonth){renderDashboardKpis('');renderRanking('');drawLineChart(document.getElementById('trendChart'),[],[]);drawBarChart(document.getElementById('monthlySectorChart'),[],[]);drawCountBars(document.getElementById('deviationChart'),[],[],[]);drawPercentBars(document.getElementById('categoryChart'),[],[],[]);document.getElementById('monthlySummaryTable').innerHTML='<p class="muted">Sin datos.</p>';return;}
-  renderDashboardKpis(selectedMonth);renderRanking(selectedMonth);
-  const trendSource=sec?audits.filter(a=>a.sector===sec):audits,grouped={};trendSource.forEach(a=>{const m=(a.fecha||'').slice(0,7);if(!m)return;(grouped[m]=grouped[m]||[]).push(Number(a.score)||0);});const trendMonths=Object.keys(grouped).sort();drawLineChart(document.getElementById('trendChart'),trendMonths.map(monthLabel),trendMonths.map(m=>average(grouped[m])));
-  const stats=sectorStats(selectedMonth);drawBarChart(document.getElementById('monthlySectorChart'),stats.map(s=>s.name),stats.map(s=>s.avg));
-  const hf=deviations.filter(d=>(d.firstDetected||d.lastSeen||'').slice(0,7)===selectedMonth),hs=[...new Set(hf.map(d=>d.sector))].sort();drawCountBars(document.getElementById('deviationChart'),hs,hs.map(sec=>hf.filter(d=>d.sector===sec).length),hs.map(()=> '#ef4444'));
-  const cats=categoryStats(selectedMonth);drawPercentBars(document.getElementById('categoryChart'),cats.map(c=>c.name),cats.map(c=>c.score),cats.map(c=>{const r=ratingFromAvg(c.score);return r==='Bueno'?'#16a34a':r==='Regular'?'#eab308':'#ef4444';}));
-  document.getElementById('monthlySummaryTable').innerHTML=buildMonthlySummary(selectedMonth);
+  refreshSectors();refreshDashboardFilters();
+  const mode=document.getElementById('chartPeriodMode'),sector=document.getElementById('chartSectorFilter').value||'';
+  if(!mode.dataset.ready){mode.value=config.dashboardResetDate?'reset':'month';mode.dataset.ready='1';refreshDashboardFilters();}
+  const period=currentDashboardPeriod();
+  document.getElementById('rankingTitle').textContent=sector?`Resultado de ${sector}`:'Resultados por sector';document.getElementById('rankingNote').textContent=(period.mode==='week'||period.mode==='month')?'Promedio del período y comparación contra el período anterior.':'Promedio del período seleccionado.';document.getElementById('periodChartTitle').textContent=`Resultado · ${period.label}`;
+  renderDashboardKpis(period,sector);renderRanking(period,sector);
+  const td=trendData(period,sector);document.getElementById('trendTitle').textContent=td.title;document.getElementById('trendNote').textContent=td.note;drawLineChart(document.getElementById('trendChart'),td.labels,td.values);
+  const stats=sectorStatsForPeriod(period,sector);drawBarChart(document.getElementById('monthlySectorChart'),stats.map(s=>s.name),stats.map(s=>s.avg));
+  const hf=findingsForPeriod(period,sector),hs=[...new Set(hf.map(d=>d.sector))].sort();drawCountBars(document.getElementById('deviationChart'),hs,hs.map(sec=>hf.filter(d=>d.sector===sec).length),hs.map(()=> '#ef4444'));
+  const cats=categoryStatsForPeriod(period,sector);drawPercentBars(document.getElementById('categoryChart'),cats.map(c=>c.name),cats.map(c=>c.score),cats.map(c=>{const r=ratingFromAvg(c.score);return r==='Bueno'?'#16a34a':r==='Regular'?'#eab308':'#ef4444';}));
+  document.getElementById('monthlySummaryTable').innerHTML=buildPeriodSummary(period,sector);
 }
 document.getElementById('chartSectorFilter').addEventListener('change',renderCharts);
 document.getElementById('chartMonthFilter').addEventListener('change',renderCharts);
+document.getElementById('chartWeekFilter').addEventListener('change',renderCharts);
+document.getElementById('chartPeriodMode').addEventListener('change',()=>{refreshDashboardFilters();renderCharts();});
+document.getElementById('resetDashboardNow').addEventListener('click',()=>{const d=todayLocal();if(!confirm(`¿Reiniciar los indicadores desde hoy (${d})?\n\nEl historial anterior NO se borra; solamente deja de contar en el tablero cuando uses “Desde reinicio”.`))return;config.dashboardResetDate=d;touchCatalogVersion();saveConfig();document.getElementById('chartPeriodMode').value='reset';refreshDashboardFilters();renderCharts();cloudSyncSoon();alert('Indicadores reiniciados. El historial anterior sigue disponible en Historial.');});
+document.getElementById('clearDashboardReset').addEventListener('click',()=>{if(!confirm('¿Quitar la fecha de reinicio y volver a considerar todo el historial en el tablero?'))return;config.dashboardResetDate='';touchCatalogVersion();saveConfig();document.getElementById('chartPeriodMode').value='all';refreshDashboardFilters();renderCharts();cloudSyncSoon();});
 document.getElementById('refreshDashboard').addEventListener('click',async()=>{if(cloudSession){try{await cloudFullSync();}catch(e){console.error(e);}}renderCharts();});
 document.getElementById('downloadTrendChart').addEventListener('click',()=>downloadCanvas(document.getElementById('trendChart'),'evolucion-puntaje.png'));
-document.getElementById('downloadMonthlyChart').addEventListener('click',()=>downloadCanvas(document.getElementById('monthlySectorChart'),'resultado-mensual-sectores.png'));
+document.getElementById('downloadMonthlyChart').addEventListener('click',()=>downloadCanvas(document.getElementById('monthlySectorChart'),'resultado-periodo-sectores.png'));
 document.getElementById('downloadDeviationChart').addEventListener('click',()=>downloadCanvas(document.getElementById('deviationChart'),'hallazgos-por-sector.png'));
 document.getElementById('downloadCategoryChart').addEventListener('click',()=>downloadCanvas(document.getElementById('categoryChart'),'resultado-por-categoria.png'));
 
@@ -2201,10 +2255,10 @@ async function cloudPushCatalog(){
   const sectors=Object.keys(config.sectors).map((name,i)=>({id:config.cloudSectorIds[name],name,sort_order:i,active:true}));
   await cloudUpsert('sectors',sectors);
   for(const name of Object.keys(config.sectors)){const sid=config.cloudSectorIds[name];await cloudRest('questions?sector_id=eq.'+sid,{method:'DELETE'});const rows=config.sectors[name].map((q,i)=>({id:q.id,sector_id:sid,text:q.text,category:q.category||'General',detail:q.detail||'',weight:Number(q.weight)||1,critical:!!q.critical,sort_order:i,active:true}));await cloudUpsert('questions',rows);}
-  await cloudRest('app_settings?key=in.(score_thresholds,catalog_version)',{method:'DELETE'});
-  await cloudRest('app_settings',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([{key:'score_thresholds',value:config.thresholds||{good:90,regular:75}},{key:'catalog_version',value:Number(config.catalogVersion)||12}])});saveConfig();
+  await cloudRest('app_settings?key=in.(score_thresholds,catalog_version,dashboard_reset_date)',{method:'DELETE'});
+  await cloudRest('app_settings',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([{key:'score_thresholds',value:config.thresholds||{good:90,regular:75}},{key:'catalog_version',value:Number(config.catalogVersion)||13},{key:'dashboard_reset_date',value:config.dashboardResetDate||''}])});saveConfig();
 }
-async function cloudPullCatalog(){const sectors=await cloudRest('sectors?select=*&active=eq.true&order=sort_order.asc');if(!sectors?.length)return false;const questions=await cloudRest('questions?select=*&active=eq.true&order=sort_order.asc');const settings=await cloudRest('app_settings?select=*&key=eq.score_thresholds');const newS={},ids={};sectors.forEach(s=>{ids[s.name]=s.id;newS[s.name]=(questions||[]).filter(q=>q.sector_id===s.id).map(q=>({id:q.id,text:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical}));});config.sectors=newS;config.cloudSectorIds=ids;if(settings?.[0]?.value)config.thresholds=settings[0].value;saveConfig();refreshSectors();initAudit();return true;}
+async function cloudPullCatalog(){const sectors=await cloudRest('sectors?select=*&active=eq.true&order=sort_order.asc');if(!sectors?.length)return false;const questions=await cloudRest('questions?select=*&active=eq.true&order=sort_order.asc');const settings=await cloudRest('app_settings?select=*&key=in.(score_thresholds,dashboard_reset_date)');const newS={},ids={};sectors.forEach(s=>{ids[s.name]=s.id;newS[s.name]=(questions||[]).filter(q=>q.sector_id===s.id).map(q=>({id:q.id,text:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical}));});config.sectors=newS;config.cloudSectorIds=ids;const scoreSetting=(settings||[]).find(x=>x.key==='score_thresholds'),resetSetting=(settings||[]).find(x=>x.key==='dashboard_reset_date');if(scoreSetting?.value)config.thresholds=scoreSetting.value;if(resetSetting&&typeof resetSetting.value==='string')config.dashboardResetDate=resetSetting.value;saveConfig();refreshSectors();initAudit();return true;}
 async function cloudFullSync(){
   if(cloudBusy)return;cloudBusy=true;cloudSetStatus('Sincronizando datos…','warn');
   try{

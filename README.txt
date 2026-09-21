@@ -139,3 +139,10 @@ MEJORAS V17:
 - Cada alta, edición o eliminación de sectores/preguntas incrementa la versión del catálogo.
 - La sincronización del catálogo ahora funciona en ambos sentidos: si el catálogo local es más nuevo, lo sube a Supabase; si el remoto es más nuevo, lo descarga.
 - Un sector nuevo queda disponible en PC y celular luego de sincronizar.
+
+
+V18 - TABLERO POR SECTOR / MES / SEMANA
+- Filtros de tablero por sector, mes, semana, desde reinicio o todo el historial.
+- Reinicio de indicadores sin borrar auditorías históricas.
+- Reinicio inicial configurado desde 21/09/2026 por renovación de preguntas.
+- Evolución diaria/semanal/mensual según el período elegido.
