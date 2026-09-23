@@ -1,4 +1,4 @@
-const CACHE="ehs-auditoria-v19";
+const CACHE="ehs-auditoria-v20";
 const ASSETS=["./","index.html","manifest.webmanifest","ehs-icon-192-v12.png","ehs-icon-512-v12.png"];
 
 self.addEventListener("install",event=>{
