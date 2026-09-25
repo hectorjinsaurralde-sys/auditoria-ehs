@@ -8,11 +8,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Auditoría EHS">
   <title>Auditoría EHS</title>
-  <link rel="manifest" href="manifest.webmanifest?v=19">
-  <link rel="apple-touch-icon" href="ehs-icon-192-v12.png?v=19">
-  <link rel="icon" type="image/png" sizes="192x192" href="ehs-icon-192-v12.png?v=19">
-  <link rel="icon" type="image/png" sizes="512x512" href="ehs-icon-512-v12.png?v=19">
-  <link rel="shortcut icon" href="ehs-icon-192-v12.png?v=19">
+  <link rel="manifest" href="manifest.webmanifest?v=23">
+  <link rel="apple-touch-icon" href="ehs-icon-192-v12.png?v=23">
+  <link rel="icon" type="image/png" sizes="192x192" href="ehs-icon-192-v12.png?v=23">
+  <link rel="icon" type="image/png" sizes="512x512" href="ehs-icon-512-v12.png?v=23">
+  <link rel="shortcut icon" href="ehs-icon-192-v12.png?v=23">
   <style>
     :root{
       --bg:#f4f7f8;--card:#fff;--text:#132126;--muted:#637078;--line:#d9e1e4;
@@ -106,6 +106,8 @@
     .score-guide-card.good{background:#eaf8f0;border-color:#99d1b3;color:#145a36}.score-guide-card.regular{background:#fff8df;border-color:#ead69a;color:#6f5510}.score-guide-card.bad{background:#fff0ef;border-color:#f0b5b0;color:#9f241b}
     .weight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.weight-chip{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fbfcfc}.weight-chip strong{font-size:18px}
     .rule-box{margin-top:10px;border-left:5px solid #ef4444;background:#fff5f5;border-radius:10px;padding:10px 12px;color:#7f1d1d;font-size:13px}
+    #historySummaryTable{margin-top:12px}
+    #historyList .audit-card{margin-bottom:10px}
 
 
     @media(max-width:650px){
@@ -123,7 +125,7 @@
   <header>
     <h1>Auditoría EHS</h1>
     <p>Seguridad · Higiene · Medio Ambiente</p>
-  <div class="version-badge">Versión 21 · Sincronización reparada</div></header>
+  <div class="version-badge">Versión 24 · Fotos en informes</div></header>
   <nav id="tabs">
     <button data-page="new" class="active">Auditar</button>
     <button data-page="history">Historial</button>
@@ -214,9 +216,38 @@
       <div class="card">
         <div class="row between">
           <div>
-            <h2 class="section-title" style="margin-bottom:3px">Historial</h2>
-            <div class="small muted">Auditorías guardadas en este dispositivo.</div>
+            <h2 class="section-title" style="margin-bottom:3px">Historial y comparativa</h2>
+            <div class="small muted">Filtrá por semana, mes, rango de fechas o sector. La comparativa usa solamente las auditorías que quedan dentro del filtro.</div>
           </div>
+          <button class="btn secondary" id="historyRefresh">Actualizar</button>
+        </div>
+        <div class="grid two" style="margin-top:12px">
+          <label>Período<select id="historyPeriodMode"><option value="week">Semana</option><option value="month">Mes</option><option value="range">Rango de fechas</option><option value="all">Todo el historial</option></select></label>
+          <label>Sector<select id="historySectorFilter"><option value="">Todos los sectores</option></select></label>
+          <label id="historyWeekWrap">Semana<select id="historyWeekFilter"><option value="">Seleccionar semana</option></select></label>
+          <label id="historyMonthWrap" class="hidden">Mes<select id="historyMonthFilter"><option value="">Seleccionar mes</option></select></label>
+          <label id="historyFromWrap" class="hidden">Desde<input id="historyDateFrom" type="date"></label>
+          <label id="historyToWrap" class="hidden">Hasta<input id="historyDateTo" type="date"></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="dash-kpis" id="historyKpis"></div>
+        <div class="dashboard-note" id="historyInsight">Seleccioná un período para comparar las auditorías.</div>
+      </div>
+
+      <div class="chart-box" style="margin-bottom:12px">
+        <div class="row between">
+          <div><strong id="historyCompareTitle">Comparativa por sector</strong><div class="chart-note" id="historyCompareNote">Promedio de las auditorías realizadas en el período seleccionado.</div></div>
+          <button class="btn secondary" id="downloadHistoryChart">Descargar gráfico</button>
+        </div>
+        <canvas id="historyCompareChart" class="chart" width="900" height="320"></canvas>
+        <div id="historySummaryTable"></div>
+      </div>
+
+      <div class="card">
+        <div class="row between">
+          <div><h2 class="section-title" style="margin-bottom:3px">Auditorías del período</h2><div class="small muted">Podés abrir cada auditoría y descargar su informe o PDF.</div></div>
           <span class="count" id="historyCount"></span>
         </div>
         <div id="historyList"></div>
@@ -1830,9 +1861,9 @@ function reportHtml(a){
     <div class="hero"><h1>Informe de Auditoría EHS</h1><div class="meta"><strong>Sector:</strong> ${escapeHtml(a.sector)} &nbsp;|&nbsp; <strong>Fecha:</strong> ${escapeHtml(a.fecha)} &nbsp;|&nbsp; <strong>Turno:</strong> ${escapeHtml(a.turno)} &nbsp;|&nbsp; <strong>Auditor:</strong> ${escapeHtml(a.auditor)}<br><strong>Acompaña:</strong> ${escapeHtml(a.companion||'—')} &nbsp;|&nbsp; <strong>Personas en turno:</strong> ${Number(a.shiftPeople)||0}</div></div>
     <div class="kpis">
       <div class="box"><div class="label">Resultado</div><div class="result-wrap"><div><div class="score">${a.score}%</div><div class="sub">${escapeHtml(rating)}</div></div><div class="result-bubble ${bubbleClass}">${ratingEmoji(rating)}</div></div></div>
-      <div class="box"><div class="label">No cumple</div><div class="score" style="color:var(--red)">${badCount}</div><div class="sub">Desvíos detectados</div></div>
+      <div class="box"><div class="label">No cumple</div><div class="score" style="color:var(--red)">${badCount}</div><div class="sub">Hallazgos detectados</div></div>
       <div class="box"><div class="label">Cumple</div><div class="score" style="color:var(--green)">${okCount}</div><div class="sub">Ítems conformes</div></div>
-      <div class="box"><div class="label">Críticos</div><div class="score" style="color:${criticalFails?'#b42318':'#16a34a'}">${criticalFails}</div><div class="sub">Desvíos críticos</div></div>
+      <div class="box"><div class="label">Críticos</div><div class="score" style="color:${criticalFails?'#b42318':'#16a34a'}">${criticalFails}</div><div class="sub">Hallazgos críticos</div></div>
     </div>
     <div class="summary">
       <div class="mini ok"><div class="label">Cumple</div><div class="n">${okCount}</div></div>
@@ -1845,6 +1876,62 @@ function reportHtml(a){
     <div class="footer-note">Informe generado desde Auditoría EHS</div>
   </div></body></html>`;
 }
+function blobAsDataUrl(blob){
+  return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error||new Error("No pude leer la imagen"));r.readAsDataURL(blob);});
+}
+async function cloudPhotoForReport(path){
+  const signed=await cloudSignedPhotoUrl(path);
+  if(!signed)return null;
+  try{
+    const r=await fetchWithTimeout(signed,{method:'GET',cache:'no-store'},20000);
+    if(!r.ok)throw new Error('Error imagen '+r.status);
+    const blob=await r.blob();
+    return await blobAsDataUrl(blob);
+  }catch(e){
+    console.warn('No pude incrustar la foto; uso URL firmada',e);
+    return signed;
+  }
+}
+async function ensureAuditDetailForReport(a){
+  // Para informes siempre consultamos la versión más reciente de las respuestas en nube.
+  // Así recuperamos photoPath aunque este equipo haya abierto antes la auditoría sin fotos.
+  if(cloudSession&&a?.id){
+    try{
+      const rows=await cloudRest('audits?select=answers&id=eq.'+encodeURIComponent(a.id)+'&limit=1');
+      if(rows?.[0]?.answers?.length){
+        const remote=rows[0].answers;
+        const localByQuestion=new Map((a.answers||[]).map(x=>[String(x.question||''),x]));
+        a.answers=remote.map(x=>{
+          const old=localByQuestion.get(String(x.question||''));
+          return {...x,photoPath:x.photoPath||old?.photoPath||null,photo:(old?.photo&&String(old.photo).startsWith('data:'))?old.photo:null};
+        });
+        a.cloudDetailPending=false;
+      }
+    }catch(e){console.warn('Detalle remoto no disponible para informe',e);}
+  }
+  if(!a?.answers?.length){
+    alert("No pude recuperar el detalle de esta auditoría. En el celular donde la hiciste tocá ‘Reparar sincronización’ y después sincronizá nuevamente la PC.");
+    return false;
+  }
+
+  // Convertimos la evidencia a data URL para que el HTML/PDF conserve las fotos y
+  // no dependa de que una URL firmada siga vigente al momento de imprimir.
+  let photoPaths=0, photosLoaded=0;
+  for(const x of a.answers){
+    if(typeof x.photo==='string'&&x.photo.startsWith('data:')){photosLoaded++;continue;}
+    if(x.photoPath){
+      photoPaths++;
+      const img=cloudSession?await cloudPhotoForReport(x.photoPath):null;
+      if(img){x.photo=img;photosLoaded++;}
+    }
+  }
+  saveAudits();
+  if(photoPaths>0&&photosLoaded===0){
+    alert("Pude recuperar la auditoría, pero no las fotos. Desde el celular donde la realizaste tocá ‘Reparar sincronización’ para volver a subir la evidencia y luego reintentá desde la PC.");
+  }
+  return true;
+}
+
 function downloadReport(a){
   const html=reportHtml(a);
   const blob=new Blob([html],{type:"text/html;charset=utf-8"});
@@ -1854,19 +1941,97 @@ function downloadReport(a){
   link.href=url; link.download=`Informe-EHS-${safe}-${a.fecha}.html`; link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
-function printReport(a){
+async function printReport(a){
   const w=window.open("","_blank");
   if(!w){ alert("El navegador bloqueó la ventana. Habilitá ventanas emergentes para guardar el PDF."); return; }
   w.document.open(); w.document.write(reportHtml(a)); w.document.close();
-  setTimeout(()=>w.print(),350);
+  const imgs=[...w.document.images];
+  if(imgs.length){
+    await Promise.race([
+      Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;}))),
+      new Promise(resolve=>setTimeout(resolve,8000))
+    ]);
+  }
+  await new Promise(resolve=>setTimeout(resolve,250));
+  w.focus(); w.print();
 }
 
+function historyPeriod(){
+  const mode=document.getElementById('historyPeriodMode')?.value||'week';
+  if(mode==='week'){
+    const start=document.getElementById('historyWeekFilter')?.value||mondayYmd(todayLocal());
+    return {mode,start,end:addDaysYmd(start,7),label:`Semana ${weekLabel(start)}`};
+  }
+  if(mode==='month'){
+    const month=document.getElementById('historyMonthFilter')?.value||todayLocal().slice(0,7);
+    const [y,m]=month.split('-').map(Number);const end=m===12?`${y+1}-01-01`:`${y}-${String(m+1).padStart(2,'0')}-01`;
+    return {mode,start:`${month}-01`,end,label:`Mes ${monthLabel(month)}`};
+  }
+  if(mode==='range'){
+    const start=document.getElementById('historyDateFrom')?.value||'';
+    const to=document.getElementById('historyDateTo')?.value||'';
+    return {mode,start,end:to?addDaysYmd(to,1):'',label:start||to?`Rango ${start?shortDate(start):'inicio'} – ${to?shortDate(to):'hoy'}`:'Rango de fechas'};
+  }
+  return {mode:'all',start:'',end:'',label:'Todo el historial'};
+}
+function refreshHistoryFilters(){
+  const sectorSel=document.getElementById('historySectorFilter');
+  if(!sectorSel)return;
+  const oldSector=sectorSel.value;
+  const sectors=[...new Set([...Object.keys(config.sectors||{}),...audits.map(a=>a.sector).filter(Boolean)])].sort();
+  sectorSel.innerHTML='<option value="">Todos los sectores</option>'+sectors.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
+  if(sectors.includes(oldSector))sectorSel.value=oldSector;
+
+  const monthSel=document.getElementById('historyMonthFilter');
+  const currentMonth=todayLocal().slice(0,7),months=[...new Set([currentMonth,...audits.map(a=>(a.fecha||'').slice(0,7)).filter(Boolean)])].sort().reverse();
+  const oldM=monthSel.value;monthSel.innerHTML=months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');monthSel.value=months.includes(oldM)?oldM:currentMonth;
+
+  const weekSel=document.getElementById('historyWeekFilter');
+  const currentWeek=mondayYmd(todayLocal()),weeks=[...new Set([currentWeek,...audits.map(a=>a.fecha?mondayYmd(a.fecha):'').filter(Boolean)])].sort().reverse();
+  const oldW=weekSel.value;weekSel.innerHTML=weeks.slice(0,60).map(w=>`<option value="${w}">${weekLabel(w)}</option>`).join('');weekSel.value=weeks.includes(oldW)?oldW:currentWeek;
+
+  const mode=document.getElementById('historyPeriodMode').value;
+  document.getElementById('historyWeekWrap').classList.toggle('hidden',mode!=='week');
+  document.getElementById('historyMonthWrap').classList.toggle('hidden',mode!=='month');
+  document.getElementById('historyFromWrap').classList.toggle('hidden',mode!=='range');
+  document.getElementById('historyToWrap').classList.toggle('hidden',mode!=='range');
+  if(!document.getElementById('historyDateFrom').value)document.getElementById('historyDateFrom').value=currentWeek;
+  if(!document.getElementById('historyDateTo').value)document.getElementById('historyDateTo').value=todayLocal();
+}
+function historyRowsForFilter(period,sector){
+  return audits.filter(a=>inDateRange(a.fecha,period.start,period.end)&&(!sector||a.sector===sector)).sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+}
+function historySectorStats(rows){
+  const names=[...new Set(rows.map(a=>a.sector).filter(Boolean))].sort();
+  return names.map(name=>{
+    const arr=rows.filter(a=>a.sector===name).sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+    const avg=average(arr.map(a=>a.score)),last=arr[0];
+    return {name,count:arr.length,avg,rating:ratingFromAvg(avg),lastScore:last?Number(last.score)||0:null,lastDate:last?.fecha||'',findings:arr.reduce((s,a)=>s+(Number(a.bad)||0),0)};
+  }).sort((a,b)=>b.avg-a.avg||a.name.localeCompare(b.name));
+}
+function renderHistorySummary(rows,period,sector){
+  const avg=average(rows.map(a=>a.score)),res=ratingFromAvg(avg),stats=historySectorStats(rows),findings=rows.reduce((s,a)=>s+(Number(a.bad)||0),0);
+  document.getElementById('historyKpis').innerHTML=`<div class="dash-kpi"><div class="l">Auditorías</div><div class="v">${rows.length}</div></div><div class="dash-kpi ${rows.length?ratingClass(res):''}"><div class="l">Promedio</div><div class="v">${rows.length?avg+'%':'—'}</div><div class="small">${rows.length?ratingEmoji(res)+' '+res:''}</div></div><div class="dash-kpi"><div class="l">Sectores auditados</div><div class="v">${stats.length}</div></div><div class="dash-kpi bad"><div class="l">Hallazgos</div><div class="v">${findings}</div></div><div class="dash-kpi"><div class="l">Período</div><div class="small" style="font-weight:900;margin-top:7px">${escapeHtml(period.label)}</div></div>`;
+  let insight=`${period.label}: no hay auditorías dentro del filtro seleccionado.`;
+  if(rows.length&&sector){const st=stats[0];insight=`${period.label} · ${sector}: ${st.count} auditoría(s), promedio ${st.avg}% (${st.rating}) y ${st.findings} hallazgo(s).`;}
+  else if(rows.length){insight=`${period.label}: ${rows.length} auditoría(s) en ${stats.length} sector(es). Promedio general de planta: ${avg}%.`;}
+  document.getElementById('historyInsight').textContent=insight;
+  document.getElementById('historyCompareTitle').textContent=sector?`Resultado de ${sector}`:'Comparativa de sectores';
+  document.getElementById('historyCompareNote').textContent=period.mode==='week'?'Promedio de las auditorías realizadas durante la semana seleccionada.':period.mode==='month'?'Resumen mensual de planta: promedio de cada sector según sus auditorías del mes.':'Promedio por sector dentro del período filtrado.';
+  drawBarChart(document.getElementById('historyCompareChart'),stats.map(x=>x.name),stats.map(x=>x.avg));
+  if(!stats.length){document.getElementById('historySummaryTable').innerHTML='';return;}
+  const trs=stats.map(x=>`<tr><td><strong>${escapeHtml(x.name)}</strong></td><td>${x.count}</td><td><strong>${x.avg}%</strong></td><td><span class="rating ${ratingClass(x.rating)}">${ratingEmoji(x.rating)} ${x.rating}</span></td><td>${x.lastScore===null?'—':x.lastScore+'%'}</td><td>${x.lastDate?shortDate(x.lastDate):'—'}</td><td>${x.findings}</td></tr>`).join('');
+  document.getElementById('historySummaryTable').innerHTML=`<div style="overflow-x:auto"><table class="summary-table"><thead><tr><th>Sector</th><th>Aud.</th><th>Promedio</th><th>Resultado</th><th>Última</th><th>Fecha</th><th>Hallazgos</th></tr></thead><tbody>${trs}</tbody></table></div>`;
+}
 function renderHistory(){
-  const list=document.getElementById("historyList");
-  document.getElementById("historyCount").textContent=audits.length+" registro(s)";
-  if(!audits.length){ list.innerHTML='<p class="muted">Todavía no hay auditorías guardadas.</p>'; return; }
+  refreshHistoryFilters();
+  const period=historyPeriod(),sector=document.getElementById('historySectorFilter')?.value||'';
+  const rows=historyRowsForFilter(period,sector),list=document.getElementById('historyList');
+  document.getElementById('historyCount').textContent=rows.length+" registro(s)";
+  renderHistorySummary(rows,period,sector);
+  if(!rows.length){ list.innerHTML='<p class="muted">No hay auditorías para el período y sector seleccionados.</p>'; return; }
   list.innerHTML="";
-  audits.forEach((a,idx)=>{
+  rows.forEach((a)=>{
     const div=document.createElement("div");
     div.className=`card audit-card ${a.bad?"status-bad":"status-ok"}`;
     div.style.marginTop="10px";
@@ -1875,7 +2040,7 @@ function renderHistory(){
         <div><strong>${escapeHtml(a.sector)}</strong><div class="small muted">${escapeHtml(a.fecha)} · ${escapeHtml(a.turno)} · ${escapeHtml(a.auditor)}</div><div class="small muted">Acompaña: ${escapeHtml(a.companion||"—")} · Dotación turno: ${Number(a.shiftPeople)||0}</div></div>
         <div style="text-align:right"><div class="result-wrap" style="justify-content:flex-end"><div class="result-bubble sm ${ratingClass(a.rating||ratingFor(a.score))}">${ratingEmoji(a.rating||ratingFor(a.score))}</div><div><div style="font-size:24px;font-weight:900">${a.score}%</div><span class="rating ${ratingClass(a.rating||ratingFor(a.score))}">${escapeHtml(a.rating||ratingFor(a.score))}</span></div></div></div>
       </div>
-      <div class="small" style="margin-top:7px"><strong>${a.bad}</strong> desvío(s)</div>
+      <div class="small" style="margin-top:7px"><strong>${a.bad}</strong> hallazgo(s)</div>
       <div class="report-actions">
         <button class="btn secondary details">Ver detalle</button>
         <button class="btn primary report">Descargar informe</button>
@@ -1897,16 +2062,27 @@ function renderHistory(){
           </div>`).join("")+(a.generalObs?`<div class="list-item"><strong>Observación general</strong><div class="small">${escapeHtml(a.generalObs)}</div></div>`:"");
       } else det.classList.add("hidden");
     });
-    div.querySelector(".report").addEventListener("click",()=>downloadReport(a));
-    div.querySelector(".pdf").addEventListener("click",()=>printReport(a));
+    div.querySelector(".report").addEventListener("click",async()=>{
+      const btn=div.querySelector(".report");const oldText=btn.textContent;btn.disabled=true;btn.textContent="Cargando informe…";
+      try{if(await ensureAuditDetailForReport(a)) downloadReport(a);}finally{btn.disabled=false;btn.textContent=oldText;}
+    });
+    div.querySelector(".pdf").addEventListener("click",async()=>{
+      const btn=div.querySelector(".pdf");const oldText=btn.textContent;btn.disabled=true;btn.textContent="Preparando PDF…";
+      try{if(await ensureAuditDetailForReport(a)) await printReport(a);}finally{btn.disabled=false;btn.textContent=oldText;}
+    });
     div.querySelector(".delete").addEventListener("click",()=>{
       if(confirm("¿Eliminar esta auditoría?")){
-        const removed=audits.splice(idx,1)[0]; saveAudits(); if(removed)cloudDeleteRow("audits",removed.id); renderHistory();
+        const realIdx=audits.findIndex(x=>x.id===a.id);const removed=realIdx>=0?audits.splice(realIdx,1)[0]:null;saveAudits();if(removed)cloudDeleteRow("audits",removed.id);renderHistory();renderCharts();
       }
     });
     list.appendChild(div);
   });
 }
+
+['historySectorFilter','historyWeekFilter','historyMonthFilter','historyDateFrom','historyDateTo'].forEach(id=>document.getElementById(id)?.addEventListener('change',renderHistory));
+document.getElementById('historyPeriodMode')?.addEventListener('change',()=>{refreshHistoryFilters();renderHistory();});
+document.getElementById('historyRefresh')?.addEventListener('click',async()=>{if(cloudSession){try{await cloudFullSync();}catch(e){console.error(e);}}renderHistory();});
+document.getElementById('downloadHistoryChart')?.addEventListener('click',()=>downloadCanvas(document.getElementById('historyCompareChart'),'comparativa-historial-ehs.png'));
 
 
 
@@ -2315,11 +2491,21 @@ async function cloudLoadAuditDetail(a){
 function ensureCatalogIds(){config.cloudSectorIds=config.cloudSectorIds||{};Object.keys(config.sectors).forEach(name=>{if(!isUuid(config.cloudSectorIds[name]))config.cloudSectorIds[name]=newId();config.sectors[name]=config.sectors[name].map(q=>{q=normalizeQuestion(q);if(!isUuid(q.id))q.id=newId();return q;});});}
 async function cloudPushCatalog(){
   if(!cloudSession)return;ensureCatalogIds();
+  // Reutiliza el ID remoto cuando ya existe un sector con el mismo nombre.
+  // Evita el error de clave duplicada sectors_name_key al trabajar desde PC y celular.
+  const remote=await cloudRest('sectors?select=id,name');
+  const remoteByName={};(remote||[]).forEach(r=>{remoteByName[r.name]=r.id;});
+  Object.keys(config.sectors).forEach(name=>{if(isUuid(remoteByName[name]))config.cloudSectorIds[name]=remoteByName[name];});
   const sectors=Object.keys(config.sectors).map((name,i)=>({id:config.cloudSectorIds[name],name,sort_order:i,active:true}));
-  await cloudUpsert('sectors',sectors);
-  for(const name of Object.keys(config.sectors)){const sid=config.cloudSectorIds[name];await cloudRest('questions?sector_id=eq.'+sid,{method:'DELETE'});const rows=config.sectors[name].map((q,i)=>({id:q.id,sector_id:sid,text:q.text,category:q.category||'General',detail:q.detail||'',weight:Number(q.weight)||1,critical:!!q.critical,sort_order:i,active:true}));await cloudUpsert('questions',rows);}
-  await cloudRest('app_settings?key=in.(score_thresholds,catalog_version,dashboard_reset_date)',{method:'DELETE'});
-  await cloudRest('app_settings',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([{key:'score_thresholds',value:config.thresholds||{good:90,regular:75}},{key:'catalog_version',value:Number(config.catalogVersion)||13},{key:'dashboard_reset_date',value:config.dashboardResetDate||''}])});saveConfig();
+  if(sectors.length)await cloudRest('sectors?on_conflict=name',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(sectors)});
+  for(const name of Object.keys(config.sectors)){
+    const sid=config.cloudSectorIds[name];
+    await cloudRest('questions?sector_id=eq.'+sid,{method:'DELETE'});
+    const rows=config.sectors[name].map((q,i)=>({id:q.id,sector_id:sid,text:q.text,category:q.category||'General',detail:q.detail||'',weight:Number(q.weight)||1,critical:!!q.critical,sort_order:i,active:true}));
+    await cloudUpsert('questions',rows);
+  }
+  await cloudRest('app_settings?on_conflict=key',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{key:'score_thresholds',value:config.thresholds||{good:90,regular:75}},{key:'catalog_version',value:Number(config.catalogVersion)||13},{key:'dashboard_reset_date',value:config.dashboardResetDate||''}])});
+  saveConfig();
 }
 async function cloudPullCatalog(){const sectors=await cloudRest('sectors?select=*&active=eq.true&order=sort_order.asc');if(!sectors?.length)return false;const questions=await cloudRest('questions?select=*&active=eq.true&order=sort_order.asc');const settings=await cloudRest('app_settings?select=*&key=in.(score_thresholds,dashboard_reset_date)');const newS={},ids={};sectors.forEach(s=>{ids[s.name]=s.id;newS[s.name]=(questions||[]).filter(q=>q.sector_id===s.id).map(q=>({id:q.id,text:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical}));});config.sectors=newS;config.cloudSectorIds=ids;const scoreSetting=(settings||[]).find(x=>x.key==='score_thresholds'),resetSetting=(settings||[]).find(x=>x.key==='dashboard_reset_date');if(scoreSetting?.value)config.thresholds=scoreSetting.value;if(resetSetting&&typeof resetSetting.value==='string')config.dashboardResetDate=resetSetting.value;saveConfig();refreshSectors();initAudit();return true;}
 async function cloudFullSync(){

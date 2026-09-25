@@ -1,3 +1,12 @@
+V23 - Historial comparativo y filtros
+- Historial con filtro por semana, mes, rango de fechas y sector.
+- Comparativa gráfica de resultados por sector para el período filtrado.
+- Resumen con cantidad de auditorías, promedio, sectores auditados y hallazgos.
+- Tabla mensual/semanal con promedio, última auditoría y hallazgos por sector.
+- Corrección de sincronización del catálogo para evitar el error sectors_name_key por nombre de sector duplicado.
+
+V22 - Corrige generación de informes desde PC: carga el detalle de la auditoría desde Supabase antes de descargar/guardar PDF.
+
 VERSIÓN 19
 - Tablero con filtros por sector, semana, mes y desde reinicio.
 - Indicador visible de versión.
@@ -154,3 +163,10 @@ V18 - TABLERO POR SECTOR / MES / SEMANA
 
 
 V21: se reemplazó el título "Personal / EPP" por "Datos de la auditoría" y se quitó la referencia a EPP en el texto de contexto de dotación.
+
+
+V24 - Informes con evidencia fotográfica
+- El informe vuelve a consultar las respuestas remotas antes de generarse.
+- Las fotos de Supabase se incrustan en el informe para que aparezcan al guardar PDF.
+- La impresión espera a que las imágenes terminen de cargar.
+- Si una evidencia todavía no fue subida desde el celular, la app indica reparar sincronización.
