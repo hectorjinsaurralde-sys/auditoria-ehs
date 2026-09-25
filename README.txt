@@ -153,4 +153,4 @@ V18 - TABLERO POR SECTOR / MES / SEMANA
 - Evolución diaria/semanal/mensual según el período elegido.
 
 
-V20: se reemplazó el título "Personal / EPP" por "Datos de la auditoría" y se quitó la referencia a EPP en el texto de contexto de dotación.
+V21: se reemplazó el título "Personal / EPP" por "Datos de la auditoría" y se quitó la referencia a EPP en el texto de contexto de dotación.

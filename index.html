@@ -123,7 +123,7 @@
   <header>
     <h1>Auditoría EHS</h1>
     <p>Seguridad · Higiene · Medio Ambiente</p>
-  <div class="version-badge">Versión 20 · Datos de auditoría</div></header>
+  <div class="version-badge">Versión 21 · Sincronización reparada</div></header>
   <nav id="tabs">
     <button data-page="new" class="active">Auditar</button>
     <button data-page="history">Historial</button>
@@ -148,7 +148,7 @@
         <div><strong>Auditoría EHS sincronizada</strong><div class="small muted" id="cloudUserText"></div></div>
         <div class="cloud-status"><span class="cloud-dot ok" id="cloudDot"></span><span id="cloudStatusText">Conectado</span></div>
       </div>
-      <div class="row" style="margin-top:9px"><button class="btn primary" id="cloudSyncBtn">Sincronizar ahora</button><button class="btn secondary" id="cloudLogoutBtn">Cerrar sesión</button></div>
+      <div class="row" style="margin-top:9px"><button class="btn primary" id="cloudSyncBtn">Sincronizar ahora</button><button class="btn secondary" id="cloudRepairBtn">Reparar sincronización</button><button class="btn secondary" id="cloudLogoutBtn">Cerrar sesión</button></div>
       <div id="cloudSyncMsg" class="small muted" style="margin-top:7px"></div>
     </div>
   </section>
@@ -2218,15 +2218,39 @@ async function cloudUpsert(table,rows){if(!rows.length)return;for(let i=0;i<rows
 async function cloudPushRecords(){
   const dirtyAuditIds=[...syncState.dirtyAudits];
   for(const id of dirtyAuditIds){
-    const a=audits.find(x=>String(x.id)===String(id)); if(!a){syncState.dirtyAudits=syncState.dirtyAudits.filter(x=>x!==id);continue;}
-    let prep={answers:(a.answers||[]).map(x=>{const y={...x};delete y.photo;delete y.photoInfo;return y;}),allPhotosOk:true};
-    try{prep=await cloudPrepareAuditAnswers(a);}catch(e){console.error(e);prep.allPhotosOk=false;}
-    await cloudUpsert('audits',[auditToRow(a,prep.answers)]);
+    const a=audits.find(x=>String(x.id)===String(id));
+    if(!a){syncState.dirtyAudits=syncState.dirtyAudits.filter(x=>String(x)!==String(id));continue;}
+
+    // 1) Primero subimos SIEMPRE la auditoría liviana. Las fotos nunca deben bloquear
+    // que el registro aparezca en la PC.
+    const liteAnswers=(a.answers||[]).map(x=>{
+      const y={...x};
+      delete y.photo; delete y.photoInfo;
+      return y;
+    });
+    await cloudUpsert('audits',[auditToRow(a,liteAnswers)]);
+
+    // 2) Luego intentamos las fotos. Si alguna falla, la auditoría ya quedó en nube
+    // y sólo queda pendiente completar sus imágenes.
+    let prep={answers:liteAnswers,allPhotosOk:true};
+    try{
+      prep=await cloudPrepareAuditAnswers(a);
+      if(JSON.stringify(prep.answers)!==JSON.stringify(liteAnswers)){
+        await cloudUpsert('audits',[auditToRow(a,prep.answers)]);
+      }
+    }catch(e){
+      console.error('Fotos pendientes',e);
+      prep.allPhotosOk=false;
+    }
     if(prep.allPhotosOk)syncState.dirtyAudits=syncState.dirtyAudits.filter(x=>String(x)!==String(id));
   }
+
   const dirtyDevIds=[...syncState.dirtyDeviations];
   const drows=deviations.filter(d=>dirtyDevIds.includes(String(d.id))).map(deviationToRow);
-  if(drows.length){await cloudUpsert('deviations',drows);syncState.dirtyDeviations=syncState.dirtyDeviations.filter(id=>!dirtyDevIds.includes(String(id)));}
+  if(drows.length){
+    await cloudUpsert('deviations',drows);
+    syncState.dirtyDeviations=syncState.dirtyDeviations.filter(id=>!dirtyDevIds.includes(String(id)));
+  }
   saveSyncState();
 }
 async function cloudPullRecords(){
@@ -2237,6 +2261,44 @@ async function cloudPullRecords(){
   const dmap=new Map(deviations.map(d=>[String(d.id),d]));(rd||[]).forEach(r=>{const old=dmap.get(String(r.id));dmap.set(String(r.id),rowToDeviation(r,old));});deviations=[...dmap.values()];saveDeviations();
   syncState.lastPullAt=new Date().toISOString();saveSyncState();
 }
+async function cloudQueueMissingLocalRecords(){
+  // Reconciliación entre este dispositivo y la nube. Recupera auditorías locales de
+  // versiones anteriores aunque hayan perdido la marca de “pendiente”.
+  const remoteAudits=await cloudRest('audits?select=id');
+  const remoteAuditIds=new Set((remoteAudits||[]).map(r=>String(r.id)));
+  for(const a of audits){
+    if(a?.id && !remoteAuditIds.has(String(a.id))) cloudMarkAuditDirty(a.id);
+  }
+
+  const remoteDevs=await cloudRest('deviations?select=id');
+  const remoteDevIds=new Set((remoteDevs||[]).map(r=>String(r.id)));
+  for(const d of deviations){
+    if(d?.id && !remoteDevIds.has(String(d.id))) cloudMarkDeviationDirty(d.id);
+  }
+  return {remoteAuditCount:remoteAuditIds.size,remoteDeviationCount:remoteDevIds.size};
+}
+
+async function cloudRepairSync(){
+  if(cloudBusy)return;
+  cloudBusy=true;
+  cloudSetStatus('Reparando sincronización…','warn');
+  try{
+    const beforeLocal=audits.length;
+    const state=await cloudQueueMissingLocalRecords();
+    const queued=syncState.dirtyAudits.length;
+    await cloudPushRecords();
+    await cloudPullRecords();
+    renderHistory();renderDeviations();renderCharts();
+    const pending=syncState.dirtyAudits.length+syncState.dirtyDeviations.length;
+    cloudSetStatus(pending?'Auditorías sincronizadas · fotos pendientes':'Sincronizado','ok');
+    document.getElementById('cloudSyncMsg').textContent=`Revisión completa: ${beforeLocal} auditoría(s) en este dispositivo · ${state.remoteAuditCount} estaban en nube · ${queued} se enviaron/reintentaron · ${pending} elemento(s) pendiente(s).`;
+  }catch(e){
+    console.error(e);
+    cloudSetStatus('Guardado local · nube pendiente','warn');
+    document.getElementById('cloudSyncMsg').textContent='No se pudo reparar: '+e.message+' La auditoría local no se elimina.';
+  }finally{cloudBusy=false;}
+}
+
 async function cloudLoadAuditDetail(a){
   if(!a?.id)return a;
   if(a.answers&&a.answers.length&&!a.cloudDetailPending)return a;
@@ -2263,14 +2325,25 @@ async function cloudPullCatalog(){const sectors=await cloudRest('sectors?select=
 async function cloudFullSync(){
   if(cloudBusy)return;cloudBusy=true;cloudSetStatus('Sincronizando datos…','warn');
   try{
-    const remoteVersion=await cloudRest('app_settings?select=value&key=eq.catalog_version');const rv=Number(remoteVersion?.[0]?.value||0);const localVersion=Number(config.catalogVersion)||0;
-    if(localVersion>rv){await cloudPushCatalog();}else if(rv>localVersion){await cloudPullCatalog();config.catalogVersion=rv;saveConfig();}
+    const remoteVersion=await cloudRest('app_settings?select=value&key=eq.catalog_version');
+    const rv=Number(remoteVersion?.[0]?.value||0),localVersion=Number(config.catalogVersion)||0;
+    if(localVersion>rv){await cloudPushCatalog();}
+    else if(rv>localVersion){await cloudPullCatalog();config.catalogVersion=rv;saveConfig();}
+
+    // No dependemos sólo de la lista “pendiente”: comparamos contra nube y recuperamos
+    // auditorías locales que versiones anteriores pudieron dejar sin sincronizar.
+    const state=await cloudQueueMissingLocalRecords();
     await cloudPushRecords();
     await cloudPullRecords();
     renderHistory();renderDeviations();renderCharts();
-    const pend=syncState.dirtyAudits.length+syncState.dirtyDeviations.length;cloudSetStatus(pend?'Datos sincronizados · fotos pendientes':'Sincronizado',pend?'warn':'ok');document.getElementById('cloudSyncMsg').textContent=(pend?`${pend} elemento(s) pendiente(s) de completar en nube. `:'')+'Última sincronización: '+new Date().toLocaleString();
-  }catch(e){console.error(e);cloudSetStatus('Guardado local · nube pendiente','warn');document.getElementById('cloudSyncMsg').textContent=e.message+' Podés seguir usando la app y reintentar después.';}
-  finally{cloudBusy=false;}
+    const pend=syncState.dirtyAudits.length+syncState.dirtyDeviations.length;
+    cloudSetStatus(pend?'Sincronizado · fotos pendientes':'Sincronizado',pend?'warn':'ok');
+    document.getElementById('cloudSyncMsg').textContent=`${audits.length} auditoría(s) disponibles · ${state.remoteAuditCount} detectadas en nube antes de sincronizar${pend?` · ${pend} elemento(s) pendiente(s)`:''}. Última sincronización: ${new Date().toLocaleString()}`;
+  }catch(e){
+    console.error(e);
+    cloudSetStatus('Guardado local · nube pendiente','warn');
+    document.getElementById('cloudSyncMsg').textContent=e.message+' La auditoría queda guardada en este dispositivo y podés reintentar.';
+  }finally{cloudBusy=false;}
 }
 function cloudSyncSoon(){if(!cloudSession)return;if(cloudTimer)clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>{cloudTimer=null;cloudFullSync();},1200);}
 async function cloudDeleteRow(table,id){if(!cloudSession||!id)return;try{await cloudRest(table+'?id=eq.'+encodeURIComponent(id),{method:'DELETE'});}catch(e){console.error(e);}}
@@ -2283,6 +2356,7 @@ document.getElementById('cloudLoginBtn').addEventListener('click',async()=>{
 });
 document.getElementById('cloudOfflineBtn').addEventListener('click',()=>{document.getElementById('cloudPanel').classList.add('hidden');});
 document.getElementById('cloudSyncBtn').addEventListener('click',cloudFullSync);
+document.getElementById('cloudRepairBtn').addEventListener('click',cloudRepairSync);
 document.getElementById('cloudLogoutBtn').addEventListener('click',cloudLogout);
 
 window.addEventListener("beforeinstallprompt",e=>{
