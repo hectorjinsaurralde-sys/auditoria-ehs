@@ -125,7 +125,7 @@
   <header>
     <h1>Auditoría EHS</h1>
     <p>Seguridad · Higiene · Medio Ambiente</p>
-  <div class="version-badge">Versión 24 · Fotos en informes</div></header>
+  <div class="version-badge">Versión 25 · Fotos PDF corregidas</div></header>
   <nav id="tabs">
     <button data-page="new" class="active">Auditar</button>
     <button data-page="history">Historial</button>
@@ -1855,7 +1855,7 @@ function reportHtml(a){
     table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden} th,td{padding:10px 9px;vertical-align:top;border-bottom:1px solid #e7eef2} th{background:linear-gradient(180deg,#dff4f3 0%,#cfeeed 100%);text-align:left;color:#0c5f59;font-size:12px} tr:nth-child(even) td{background:#fbfdfe} tr:last-child td{border-bottom:0}
     .num{font-weight:900;text-align:center;width:34px}.cat{display:inline-block;background:#edf8ff;border:1px solid #ccecff;color:#0d6aa8;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900}.pill{display:inline-block;border-radius:999px;padding:5px 10px;font-weight:900;font-size:11px}.pill.ok{background:var(--green-soft);color:#166534}.pill.bad{background:var(--red-soft);color:#b42318}.pill.na{background:#edf2f7;color:#475569}.small-note{margin-top:5px;color:var(--muted);font-size:11px;line-height:1.35}
     .obs{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 16px}.footer-note{margin-top:14px;color:var(--muted);font-size:11px;text-align:right}
-    @media print{body{background:#fff}.wrap{padding:10mm}.hero,.box{box-shadow:none}}
+    @media print{body{background:#fff}.wrap{padding:10mm}.hero,.box{box-shadow:none}tr{break-inside:avoid;page-break-inside:avoid}img{max-width:180px!important;max-height:135px!important;object-fit:contain}}
   </style></head><body>
   <div class="wrap">
     <div class="hero"><h1>Informe de Auditoría EHS</h1><div class="meta"><strong>Sector:</strong> ${escapeHtml(a.sector)} &nbsp;|&nbsp; <strong>Fecha:</strong> ${escapeHtml(a.fecha)} &nbsp;|&nbsp; <strong>Turno:</strong> ${escapeHtml(a.turno)} &nbsp;|&nbsp; <strong>Auditor:</strong> ${escapeHtml(a.auditor)}<br><strong>Acompaña:</strong> ${escapeHtml(a.companion||'—')} &nbsp;|&nbsp; <strong>Personas en turno:</strong> ${Number(a.shiftPeople)||0}</div></div>
@@ -1879,17 +1879,38 @@ function reportHtml(a){
 function blobAsDataUrl(blob){
   return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error||new Error("No pude leer la imagen"));r.readAsDataURL(blob);});
 }
+function storageAuthenticatedObjectUrl(path){
+  const p=String(path||'').split('/').map(encodeURIComponent).join('/');
+  return SUPABASE_URL+'/storage/v1/object/authenticated/audit-photos/'+p;
+}
 async function cloudPhotoForReport(path){
-  const signed=await cloudSignedPhotoUrl(path);
-  if(!signed)return null;
+  if(!path||!cloudSession?.access_token)return null;
+  // Para el PDF nunca dejamos una URL externa. Descargamos los bytes y los
+  // convertimos a data: URL, de modo que la foto quede realmente incrustada.
   try{
-    const r=await fetchWithTimeout(signed,{method:'GET',cache:'no-store'},20000);
-    if(!r.ok)throw new Error('Error imagen '+r.status);
+    const r=await fetchWithTimeout(storageAuthenticatedObjectUrl(path),{
+      method:'GET',
+      cache:'no-store',
+      headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+cloudSession.access_token}
+    },25000);
+    if(!r.ok)throw new Error('Error imagen autenticada '+r.status);
     const blob=await r.blob();
+    if(!blob.size)throw new Error('Imagen vacía');
     return await blobAsDataUrl(blob);
-  }catch(e){
-    console.warn('No pude incrustar la foto; uso URL firmada',e);
-    return signed;
+  }catch(primaryErr){
+    console.warn('Descarga autenticada falló; pruebo URL firmada',primaryErr);
+    try{
+      const signed=await cloudSignedPhotoUrl(path);
+      if(!signed)return null;
+      const r=await fetchWithTimeout(signed,{method:'GET',cache:'no-store'},25000);
+      if(!r.ok)throw new Error('Error imagen firmada '+r.status);
+      const blob=await r.blob();
+      if(!blob.size)throw new Error('Imagen vacía');
+      return await blobAsDataUrl(blob);
+    }catch(e){
+      console.error('No pude incrustar la foto en el informe',e);
+      return null;
+    }
   }
 }
 async function ensureAuditDetailForReport(a){
@@ -1914,21 +1935,33 @@ async function ensureAuditDetailForReport(a){
     return false;
   }
 
-  // Convertimos la evidencia a data URL para que el HTML/PDF conserve las fotos y
-  // no dependa de que una URL firmada siga vigente al momento de imprimir.
-  let photoPaths=0, photosLoaded=0;
+  // Incrustamos TODA evidencia como data URL. Si una foto esperada no se puede
+  // bajar, no generamos un PDF con íconos rotos: avisamos y dejamos reintentar.
+  const pending=[];
+  let expectedPhotos=0;
   for(const x of a.answers){
-    if(typeof x.photo==='string'&&x.photo.startsWith('data:')){photosLoaded++;continue;}
+    if(typeof x.photo==='string'&&x.photo.startsWith('data:')){expectedPhotos++;continue;}
     if(x.photoPath){
-      photoPaths++;
-      const img=cloudSession?await cloudPhotoForReport(x.photoPath):null;
-      if(img){x.photo=img;photosLoaded++;}
+      expectedPhotos++;
+      pending.push((async()=>{
+        const img=cloudSession?await cloudPhotoForReport(x.photoPath):null;
+        if(img)x.photo=img;
+        else x.photo=null;
+        return !!img;
+      })());
+    }else if(x.photo){
+      // Nunca dejamos URLs temporales dentro del PDF.
+      x.photo=null;
     }
   }
+  const loaded=await Promise.all(pending);
+  const failed=loaded.filter(v=>!v).length;
   saveAudits();
-  if(photoPaths>0&&photosLoaded===0){
-    alert("Pude recuperar la auditoría, pero no las fotos. Desde el celular donde la realizaste tocá ‘Reparar sincronización’ para volver a subir la evidencia y luego reintentá desde la PC.");
+  if(failed>0){
+    alert(`No pude descargar ${failed} foto(s) desde la nube. No voy a generar un PDF incompleto. En el celular donde hiciste la auditoría tocá “Reparar sincronización”, esperá a que termine y volvé a intentarlo desde la PC.`);
+    return false;
   }
+  // Si no había rutas remotas pero sí se esperaban fotos locales, ya están incrustadas.
   return true;
 }
 

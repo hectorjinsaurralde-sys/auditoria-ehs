@@ -1,3 +1,5 @@
+VERSIÓN 25 - FOTOS INCRUSTADAS EN PDF
+
 V23 - Historial comparativo y filtros
 - Historial con filtro por semana, mes, rango de fechas y sector.
 - Comparativa gráfica de resultados por sector para el período filtrado.
