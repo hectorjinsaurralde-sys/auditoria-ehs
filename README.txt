@@ -1,3 +1,10 @@
+VERSIÓN 26 - RECEPCIÓN DE MATERIALES
+
+- El sector "Logística" pasa a llamarse "Recepción de materiales".
+- Se conserva el cuestionario existente del sector.
+- Se agrega como primer ítem: "¿El sector presenta condiciones adecuadas de orden y limpieza general?"
+- El historial anterior de Logística se muestra unificado bajo Recepción de materiales.
+
 VERSIÓN 25 - FOTOS INCRUSTADAS EN PDF
 
 V23 - Historial comparativo y filtros
