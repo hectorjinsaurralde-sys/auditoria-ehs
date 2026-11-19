@@ -125,7 +125,7 @@
   <header>
     <h1>Auditoría EHS</h1>
     <p>Seguridad · Higiene · Medio Ambiente</p>
-  <div class="version-badge">Versión 29 · Resultado dinámico por rangos</div></header>
+  <div class="version-badge">Versión 30 · Informe visual y ejecución inmediata</div></header>
   <nav id="tabs">
     <button data-page="new" class="active">Auditar</button>
     <button data-page="history">Historial</button>
@@ -180,6 +180,15 @@
           <label>Cantidad de personas en el turno<input id="shiftPeople" type="number" min="0" max="999" inputmode="numeric" placeholder="Ej.: 24"></label>
         </div>
         <div class="small muted" style="margin-top:7px">La cantidad de personas en el turno queda registrada como dato de contexto del sector.</div>
+      </div>
+
+      <div class="card purpose-card">
+        <h2 class="section-title" style="margin-bottom:6px">Qué se realizó</h2>
+        <div class="small" style="line-height:1.55">
+          Se realiza una verificación puntual del estado EHS del sector, tomando como referencia las condiciones observadas al momento de la recorrida.
+          El resultado representa la condición del día. Los hallazgos se conversan durante el encuentro para favorecer ajustes inmediatos cuando sea posible,
+          sin reemplazar la gestión formal de acciones que se lleva por otros medios.
+        </div>
       </div>
 
       <div class="card" id="previousDeviationsCard">
@@ -1834,7 +1843,7 @@ function formatKB(bytes){ return Math.max(1,Math.round((Number(bytes)||0)/1024))
 function initAudit(){
   const sector=document.getElementById("sectorSelect").value;
   const qs=(config.sectors[sector]||[]).map(normalizeQuestion);
-  answers=qs.map(q=>({question:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical,value:null,obs:"",photo:null}));
+  answers=qs.map(q=>({question:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical,value:null,obs:"",immediateAction:"",photo:null}));
   renderQuestions();
   renderPreviousDeviations();
 }
@@ -1853,16 +1862,19 @@ function renderQuestions(){
         <button class="choice bad ${a.value==="bad"?"sel":""}" data-value="bad">✕ No cumple</button>
         <button class="choice na ${a.value==="na"?"sel":""}" data-value="na">N/A</button>
       </div>
-      <input class="obs" placeholder="Observación / acción requerida" value="${escapeHtml(a.obs||"")}">
-      <label style="margin-top:8px">Foto de evidencia
+      <input class="obs" placeholder="${a.value==="bad"?"Hallazgo detectado / qué se observó":"Observación (si aplica)"}" value="${escapeHtml(a.obs||"")}">
+      ${a.value==="bad"?`<input class="immediate-action" style="margin-top:8px" placeholder="Ejecución inmediata / ajuste realizado (si aplica)" value="${escapeHtml(a.immediateAction||"")}">
+      <label style="margin-top:8px">Foto del hallazgo
         <input type="file" accept="image/*" capture="environment" class="photo">
       </label>
-      <div class="small muted">La app reduce automáticamente las fotos pesadas antes de guardarlas.</div>
+      <div class="small muted">La foto se usa como evidencia del hallazgo y se optimiza automáticamente.</div>`:`<input type="file" accept="image/*" capture="environment" class="photo hidden">`}
       <div class="preview"></div>`;
     div.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>{
       a.value=btn.dataset.value; renderQuestions();
     }));
     div.querySelector(".obs").addEventListener("input",e=>a.obs=e.target.value);
+    const immediateInput=div.querySelector(".immediate-action");
+    if(immediateInput) immediateInput.addEventListener("input",e=>a.immediateAction=e.target.value);
     div.querySelector(".photo").addEventListener("change",async e=>{
       const f=e.target.files?.[0]; if(!f)return;
       if(!f.type.startsWith("image/")){ alert("Seleccioná una imagen válida."); e.target.value=""; return; }
@@ -1979,60 +1991,126 @@ function reportHtml(a){
   const totalCount=items.length;
   const applicableCount=okCount+badCount;
   const bubbleClass=ratingClass(rating);
-  const autoSummary=`Se revisaron ${totalCount} ítems (${applicableCount} aplicables): ${okCount} cumplen, ${badCount} no cumplen y ${naCount} N/A. Resultado general: ${a.score}% (${rating}).`;
   const findings=items.filter(x=>x.value==="bad");
-  const findingList=findings.length?`<ul class="finding-list">${findings.map(x=>`<li><strong>${escapeHtml(x.category||"General")}:</strong> ${escapeHtml(x.obs||x.question)}</li>`).join("")}</ul>`:`<div class="good-note">No se registraron desvíos en los ítems evaluados.</div>`;
+  const naPct=totalCount?Math.round(naCount/totalCount*100):0;
+
+  const categoryMap=new Map();
+  items.forEach(x=>{
+    const cat=x.category||"General";
+    if(!categoryMap.has(cat))categoryMap.set(cat,{name:cat,totalW:0,okW:0,ok:0,bad:0,na:0});
+    const c=categoryMap.get(cat);
+    if(x.value==="na"){c.na++;return;}
+    const w=Number(x.weight)||1;
+    c.totalW+=w;
+    if(x.value==="ok"){c.okW+=w;c.ok++;}
+    if(x.value==="bad")c.bad++;
+  });
+  const categoryStats=[...categoryMap.values()].map(c=>{
+    const score=c.totalW?Math.round(c.okW/c.totalW*100):null;
+    const r=score===null?"N/A":ratingFor(score);
+    const cls=score===null?"na":ratingClass(r);
+    return {...c,score,r,cls};
+  });
+
+  const categoryBars=categoryStats.map(c=>`
+    <div class="cat-row">
+      <div class="cat-row-head"><strong>${escapeHtml(c.name)}</strong><span>${c.score===null?"N/A":c.score+"%"}</span></div>
+      <div class="bar-track"><div class="bar-fill ${c.cls}" style="width:${c.score===null?0:c.score}%"></div></div>
+      <div class="cat-mini">${c.ok} cumple · ${c.bad} no cumple${c.na?` · ${c.na} N/A`:""}</div>
+    </div>`).join("");
+
   const rows=items.map((x,i)=>`
     <tr>
       <td class="num">${i+1}</td>
       <td><span class="cat">${escapeHtml(x.category||"General")}</span></td>
-      <td><strong>${escapeHtml(x.question)}</strong>${x.detail?`<div class="small-note">${escapeHtml(x.detail)}</div>`:""}</td>
+      <td><strong>${escapeHtml(x.question)}</strong></td>
       <td><span class="pill ${x.value==='ok'?'ok':x.value==='bad'?'bad':'na'}">${x.value==='ok'?'Cumple':x.value==='bad'?'No cumple':'N/A'}</span></td>
       <td>${escapeHtml(x.obs||"")||"—"}</td>
     </tr>`).join("");
+
   const evidence=findings.length?findings.map((x,i)=>`
     <div class="finding-card">
-      <div class="finding-head"><span class="finding-number">${i+1}</span><div><div class="finding-cat">${escapeHtml(x.category||"General")}${x.critical?' · CRÍTICO':''}</div><strong>${escapeHtml(x.question)}</strong></div></div>
-      ${x.obs?`<div class="finding-obs">${escapeHtml(x.obs)}</div>`:""}
+      <div class="finding-head">
+        <span class="finding-number">${i+1}</span>
+        <div><div class="finding-cat">${escapeHtml(x.category||"General")}${x.critical?' · CRÍTICO':''}</div><strong>${escapeHtml(x.question)}</strong></div>
+      </div>
+      <div class="finding-block"><span>Hallazgo detectado</span><strong>${escapeHtml(x.obs||"Sin observación adicional.")}</strong></div>
+      ${x.immediateAction?`<div class="action-block"><span>Ejecución inmediata</span><strong>${escapeHtml(x.immediateAction)}</strong></div>`:""}
       ${x.photo?`<img src="${x.photo}" class="evidence-photo" alt="Evidencia del hallazgo">`:`<div class="no-photo">Sin evidencia fotográfica registrada.</div>`}
-    </div>`).join(""):`<div class="good-note">No hay hallazgos con evidencia para mostrar.</div>`;
+    </div>`).join(""):`<div class="good-note">No se registraron hallazgos en los ítems evaluados.</div>`;
+
+  const purposeText="Se realizó una verificación puntual del estado EHS del sector, tomando como referencia las condiciones observadas al momento de la recorrida. El resultado representa la condición del día. Los hallazgos se conversan durante el encuentro para favorecer ajustes inmediatos cuando sea posible, sin reemplazar la gestión formal de acciones que se lleva por otros medios.";
+
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe ${escapeHtml(a.sector)}</title>
   <style>
-    :root{--green:#16a34a;--green-soft:#e8f8ee;--yellow:#eab308;--yellow-soft:#fff7d6;--red:#ef4444;--red-soft:#ffe8e8;--teal:#0f766e;--ink:#17303a;--muted:#5d6d75;--line:#d9e4ea;--panel:#ffffff;--bg:#f4f9fb}
-    *{box-sizing:border-box} body{font-family:Arial,sans-serif;color:var(--ink);margin:0;background:var(--bg)} .wrap{padding:26px;max-width:1200px;margin:auto}
-    .hero{background:linear-gradient(135deg,#0f766e 0%,#06b6d4 100%);color:#fff;padding:24px 26px;border-radius:22px;box-shadow:0 10px 24px rgba(15,118,110,.18)}
-    .hero h1{margin:0 0 6px;font-size:30px}.hero .meta{font-size:14px;opacity:.96;line-height:1.5}
-    .kpis{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr;gap:14px;margin-top:16px}
-    .box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 6px 16px rgba(18,46,58,.05)}
-    .label{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-    .score{font-size:42px;font-weight:900;line-height:1}.sub{font-size:14px;font-weight:800;margin-top:6px}
-    .result-wrap{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-    .result-bubble{width:98px;height:98px;border-radius:50%;display:grid;place-items:center;font-size:48px;color:#fff;font-weight:900;box-shadow:inset 0 -8px 0 rgba(0,0,0,.09)}
-    .result-bubble.good{background:var(--green)} .result-bubble.regular{background:var(--yellow)} .result-bubble.bad{background:var(--red)}
-    .section{margin-top:18px}.section-title{background:#e8f6f5;color:#0a5d57;border-left:8px solid #0f766e;border-radius:14px;padding:12px 14px;font-size:20px;font-weight:900;margin-bottom:12px}
-    .summary-box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;line-height:1.5}.summary-box p{margin:0 0 10px}.summary-box p:last-child{margin-bottom:0}
-    .finding-list{margin:8px 0 0;padding-left:20px}.finding-list li{margin:5px 0}.good-note{background:var(--green-soft);color:#166534;border-radius:12px;padding:10px 12px;font-weight:700}
-    table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden} th,td{padding:10px 9px;vertical-align:top;border-bottom:1px solid #e7eef2} th{background:linear-gradient(180deg,#dff4f3 0%,#cfeeed 100%);text-align:left;color:#0c5f59;font-size:12px} tr:nth-child(even) td{background:#fbfdfe} tr:last-child td{border-bottom:0}
-    .num{font-weight:900;text-align:center;width:34px}.cat{display:inline-block;background:#edf8ff;border:1px solid #ccecff;color:#0d6aa8;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900}.pill{display:inline-block;border-radius:999px;padding:5px 10px;font-weight:900;font-size:11px}.pill.ok{background:var(--green-soft);color:#166534}.pill.bad{background:var(--red-soft);color:#b42318}.pill.na{background:#edf2f7;color:#475569}.small-note{margin-top:5px;color:var(--muted);font-size:11px;line-height:1.35}
-    .finding-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.finding-card{background:#fff;border:2px solid #ffd1d1;border-radius:18px;padding:14px;break-inside:avoid;page-break-inside:avoid}.finding-head{display:flex;align-items:flex-start;gap:10px}.finding-number{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--red);color:#fff;font-weight:900;flex:0 0 auto}.finding-cat{color:#b42318;font-size:11px;font-weight:900;text-transform:uppercase;margin-bottom:3px}.finding-obs{margin-top:10px;padding:10px 12px;border-radius:12px;background:#fff4f4;font-weight:700}.evidence-photo{display:block;width:100%;max-height:330px;object-fit:contain;margin-top:12px;border-radius:12px;border:1px solid var(--line);background:#f8fafc}.no-photo{margin-top:10px;color:var(--muted);font-size:12px;font-style:italic}
-    .footer-note{margin-top:14px;color:var(--muted);font-size:11px;text-align:right}
-    @media(max-width:700px){.kpis{grid-template-columns:1fr 1fr}.finding-grid{grid-template-columns:1fr}}
-    @media print{body{background:#fff}.wrap{padding:8mm}.hero,.box{box-shadow:none}.finding-grid{display:block}.finding-card{margin-bottom:10px}tr{break-inside:avoid;page-break-inside:avoid}.evidence-photo{max-height:120mm!important;object-fit:contain}}
+    :root{--green:#16a34a;--green-soft:#e8f8ee;--yellow:#eab308;--yellow-soft:#fff7d6;--red:#ef4444;--red-soft:#ffe8e8;--teal:#0f766e;--teal-soft:#e8f6f5;--ink:#17303a;--muted:#5d6d75;--line:#d9e4ea;--panel:#ffffff;--bg:#f4f9fb;--gray:#64748b;--gray-soft:#eef2f6}
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+    body{font-family:Arial,sans-serif;color:var(--ink);margin:0;background:var(--bg)} .wrap{padding:22px;max-width:1100px;margin:auto}
+    .hero{background:linear-gradient(135deg,#0f766e 0%,#0b8f86 100%);color:#fff;padding:20px 22px;border-radius:20px}
+    .hero h1{margin:0 0 5px;font-size:27px}.hero .meta{font-size:13px;opacity:.98;line-height:1.5}
+    .kpis{display:grid;grid-template-columns:1.25fr repeat(3,.75fr);gap:10px;margin-top:12px}
+    .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px}
+    .label{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+    .score{font-size:38px;font-weight:900;line-height:1}.sub{font-size:12px;font-weight:800;margin-top:5px}
+    .result-wrap{display:flex;align-items:center;justify-content:space-between;gap:8px}.result-bubble{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;font-size:38px;color:#fff;font-weight:900;box-shadow:inset 0 -6px 0 rgba(0,0,0,.08)}
+    .result-bubble.good{background:var(--green)}.result-bubble.regular{background:var(--yellow)}.result-bubble.bad{background:var(--red)}
+    .section{margin-top:14px}.section-title{background:var(--teal-soft);color:#0a5d57;border-left:7px solid var(--teal);border-radius:12px;padding:9px 12px;font-size:17px;font-weight:900;margin-bottom:9px}
+    .purpose{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;line-height:1.45;font-size:12px}
+    .summary-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:12px}.summary-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}
+    .dist{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}.dist-box{border-radius:13px;padding:10px;text-align:center}.dist-box strong{display:block;font-size:24px}.dist-box span{font-size:11px;font-weight:800}.dist-box.ok{background:var(--green-soft);color:#166534}.dist-box.bad{background:var(--red-soft);color:#b42318}.dist-box.na{background:var(--gray-soft);color:#475569}
+    .stacked{height:18px;border-radius:999px;overflow:hidden;display:flex;background:#e7eef2;margin-top:12px}.stacked .ok{background:var(--green)}.stacked .bad{background:var(--red)}.stacked .na{background:var(--gray)}
+    .cat-row{margin:0 0 9px}.cat-row:last-child{margin-bottom:0}.cat-row-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:4px}.bar-track{height:10px;background:#e7eef2;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px}.bar-fill.good{background:var(--green)}.bar-fill.regular{background:var(--yellow)}.bar-fill.bad{background:var(--red)}.bar-fill.na{background:var(--gray)}.cat-mini{font-size:10px;color:var(--muted);margin-top:3px}
+    .general-note{margin-top:10px;padding:10px 12px;border-radius:12px;background:#f7fafc;border:1px solid #e3ebef;font-size:12px;line-height:1.45}
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}th,td{padding:8px 7px;vertical-align:top;border-bottom:1px solid #e7eef2}th{background:#dff4f3;text-align:left;color:#0c5f59}tr:nth-child(even) td{background:#fbfdfe}tr:last-child td{border-bottom:0}
+    .num{font-weight:900;text-align:center;width:30px}.cat{display:inline-block;background:#edf8ff;border:1px solid #ccecff;color:#0d6aa8;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:900}.pill{display:inline-block;border-radius:999px;padding:4px 8px;font-weight:900;font-size:10px}.pill.ok{background:var(--green-soft);color:#166534}.pill.bad{background:var(--red-soft);color:#b42318}.pill.na{background:var(--gray-soft);color:#475569}
+    .finding-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.finding-card{background:#fff;border:2px solid #ffd1d1;border-radius:16px;padding:12px;break-inside:avoid;page-break-inside:avoid}.finding-head{display:flex;align-items:flex-start;gap:9px}.finding-number{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--red);color:#fff;font-weight:900;flex:0 0 auto}.finding-cat{color:#b42318;font-size:10px;font-weight:900;text-transform:uppercase;margin-bottom:2px}
+    .finding-block,.action-block{margin-top:9px;padding:9px 10px;border-radius:10px}.finding-block{background:#fff4f4}.action-block{background:#eefaf7}.finding-block span,.action-block span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:900;margin-bottom:3px}.finding-block span{color:#b42318}.action-block span{color:#0f766e}.finding-block strong,.action-block strong{font-size:12px;line-height:1.35}
+    .evidence-photo{display:block;width:100%;max-height:300px;object-fit:contain;margin-top:10px;border-radius:10px;border:1px solid var(--line);background:#f8fafc}.no-photo{margin-top:9px;color:var(--muted);font-size:11px;font-style:italic}.good-note{background:var(--green-soft);color:#166534;border-radius:12px;padding:10px 12px;font-weight:700}
+    .footer-note{margin-top:12px;color:var(--muted);font-size:10px;text-align:right}
+    @media(max-width:700px){.kpis{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:1fr}.finding-grid{grid-template-columns:1fr}}
+    @media print{body{background:#fff}.wrap{padding:7mm}.hero,.box,.summary-card{box-shadow:none}.finding-grid{display:block}.finding-card{margin-bottom:9px}tr{break-inside:avoid;page-break-inside:avoid}.evidence-photo{max-height:105mm!important;object-fit:contain}.section{break-inside:auto}.summary-grid{break-inside:avoid;page-break-inside:avoid}}
   </style></head><body>
   <div class="wrap">
-    <div class="hero"><h1>Informe de Auditoría EHS</h1><div class="meta"><strong>Sector:</strong> ${escapeHtml(a.sector)} &nbsp;|&nbsp; <strong>Fecha:</strong> ${escapeHtml(a.fecha)} &nbsp;|&nbsp; <strong>Turno:</strong> ${escapeHtml(a.turno)} &nbsp;|&nbsp; <strong>Auditor:</strong> ${escapeHtml(a.auditor)}<br><strong>Acompaña:</strong> ${escapeHtml(a.companion||'—')} &nbsp;|&nbsp; <strong>Personas en turno:</strong> ${Number(a.shiftPeople)||0}</div></div>
+    <div class="hero"><h1>Auditoría EHS · Resumen de recorrida</h1><div class="meta"><strong>Sector:</strong> ${escapeHtml(a.sector)} &nbsp;|&nbsp; <strong>Fecha:</strong> ${escapeHtml(a.fecha)} &nbsp;|&nbsp; <strong>Turno:</strong> ${escapeHtml(a.turno)} &nbsp;|&nbsp; <strong>Auditor:</strong> ${escapeHtml(a.auditor)}<br><strong>Acompaña:</strong> ${escapeHtml(a.companion||'—')} &nbsp;|&nbsp; <strong>Personas en turno:</strong> ${Number(a.shiftPeople)||0}</div></div>
+
     <div class="kpis">
-      <div class="box"><div class="label">Resultado</div><div class="result-wrap"><div><div class="score">${a.score}%</div><div class="sub">${escapeHtml(rating)}</div></div><div class="result-bubble ${bubbleClass}">${ratingEmoji(rating)}</div></div></div>
-      <div class="box"><div class="label">No cumple</div><div class="score" style="color:var(--red)">${badCount}</div><div class="sub">Hallazgos detectados</div></div>
-      <div class="box"><div class="label">Cumple</div><div class="score" style="color:var(--green)">${okCount}</div><div class="sub">Ítems conformes</div></div>
-      <div class="box"><div class="label">Críticos</div><div class="score" style="color:${criticalFails?'#b42318':'#16a34a'}">${criticalFails}</div><div class="sub">Hallazgos críticos</div></div>
+      <div class="box"><div class="label">Resultado del día</div><div class="result-wrap"><div><div class="score">${a.score}%</div><div class="sub">${escapeHtml(rating)}</div></div><div class="result-bubble ${bubbleClass}">${ratingEmoji(rating)}</div></div></div>
+      <div class="box"><div class="label">Cumple</div><div class="score" style="color:var(--green)">${okCount}</div><div class="sub">ítems conformes</div></div>
+      <div class="box"><div class="label">No cumple</div><div class="score" style="color:var(--red)">${badCount}</div><div class="sub">hallazgos</div></div>
+      <div class="box"><div class="label">N/A</div><div class="score" style="color:var(--gray)">${naCount}</div><div class="sub">no aplican</div></div>
     </div>
-    <div class="section"><div class="section-title">Resumen de lo observado</div><div class="summary-box"><p>${escapeHtml(autoSummary)}</p>${a.generalObs?`<p><strong>Observación general:</strong> ${escapeHtml(a.generalObs)}</p>`:''}<div><strong>Hallazgos:</strong>${findingList}</div></div></div>
-    <div class="section"><div class="section-title">Ítems auditados</div><table><thead><tr><th>#</th><th>Categoría</th><th>Pregunta / criterio</th><th>Resultado</th><th>Observación</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <div class="section"><div class="section-title">Hallazgos y evidencia del momento</div><div class="finding-grid">${evidence}</div></div>
-    <div class="footer-note">Informe generado desde Auditoría EHS</div>
+
+    <div class="section"><div class="section-title">Qué se realizó</div><div class="purpose">${escapeHtml(purposeText)}</div></div>
+
+    <div class="section">
+      <div class="section-title">Resumen visual de lo relevado</div>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="label">Ítems auditados</div>
+          <div class="dist">
+            <div class="dist-box ok"><strong>${okCount}</strong><span>Cumple</span></div>
+            <div class="dist-box bad"><strong>${badCount}</strong><span>No cumple</span></div>
+            <div class="dist-box na"><strong>${naCount}</strong><span>N/A</span></div>
+          </div>
+          <div class="stacked" aria-label="Distribución de resultados"><div class="ok" style="width:${totalCount?Math.round(okCount/totalCount*100):0}%"></div><div class="bad" style="width:${totalCount?Math.round(badCount/totalCount*100):0}%"></div><div class="na" style="width:${naPct}%"></div></div>
+          <div class="cat-mini" style="margin-top:6px">Sobre ${totalCount} ítems vistos · ${applicableCount} aplicables · ${criticalFails} hallazgo(s) crítico(s)</div>
+          ${a.generalObs?`<div class="general-note"><strong>Resumen de lo observado:</strong><br>${escapeHtml(a.generalObs)}</div>`:""}
+        </div>
+        <div class="summary-card">
+          <div class="label">Resultado por categoría</div>
+          ${categoryBars||'<div class="cat-mini">Sin categorías disponibles.</div>'}
+        </div>
+      </div>
+    </div>
+
+    <div class="section"><div class="section-title">Hallazgos detectados y ejecución inmediata</div><div class="finding-grid">${evidence}</div></div>
+
+    <div class="section"><div class="section-title">Ítems auditados</div><table><thead><tr><th>#</th><th>Categoría</th><th>Ítem visto</th><th>Resultado</th><th>Observación</th></tr></thead><tbody>${rows}</tbody></table></div>
+
+    <div class="footer-note">Resultado correspondiente a la condición observada al momento de la recorrida · Auditoría EHS</div>
   </div></body></html>`;
 }
+
 function blobAsDataUrl(blob){
   return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error||new Error("No pude leer la imagen"));r.readAsDataURL(blob);});
 }
@@ -2250,6 +2328,7 @@ function renderHistory(){
             <strong>${i+1}. ${escapeHtml(x.question)}</strong>
             <div class="small muted">${escapeHtml(x.category||"General")}${x.critical?" · Crítica":""}${x.detail?" · "+escapeHtml(x.detail):""}</div>
             <div class="small">${x.value==="ok"?"Cumple":x.value==="bad"?"No cumple":"N/A"}${x.obs?" · "+escapeHtml(x.obs):""}</div>
+            ${x.value==="bad"&&x.immediateAction?`<div class="small" style="margin-top:4px"><strong>Ejecución inmediata:</strong> ${escapeHtml(x.immediateAction)}</div>`:""}
             ${x.photo?`<img src="${x.photo}" class="photo-preview" alt="Evidencia">`:""}
           </div>`).join("")+(a.generalObs?`<div class="list-item"><strong>Observación general</strong><div class="small">${escapeHtml(a.generalObs)}</div></div>`:"");
       } else det.classList.add("hidden");
@@ -2791,7 +2870,7 @@ refreshSectors();
 initAudit();
 initCloud();
 if("serviceWorker" in navigator){
-  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js?v=29",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{}));
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js?v=30",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{}));
 }
 </script>
 </body>

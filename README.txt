@@ -1,3 +1,5 @@
+VERSIÓN 30 · Informe visual, colores impresos y ejecución inmediata
+
 VERSIÓN 29
 - El resultado Bueno/Regular/Malo se recalcula en toda la app según los rangos actuales.
 - Historial, detalle, Tablero e informe PDF usan el mismo criterio dinámico.
