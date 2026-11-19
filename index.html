@@ -125,7 +125,7 @@
   <header>
     <h1>Auditoría EHS</h1>
     <p>Seguridad · Higiene · Medio Ambiente</p>
-  <div class="version-badge">Versión 28 · Rangos actualizan historial</div></header>
+  <div class="version-badge">Versión 29 · Resultado dinámico por rangos</div></header>
   <nav id="tabs">
     <button data-page="new" class="active">Auditar</button>
     <button data-page="history">Historial</button>
@@ -298,8 +298,8 @@
           <div class="score-guide-card regular"><div class="title">😐 Regular</div><div class="value" id="guideRegular">75–89%</div></div>
           <div class="score-guide-card bad"><div class="title">☹️ Malo</div><div class="value" id="guideBad">&lt; 75%</div></div>
         </div>
-        <div class="rule-box"><strong>Regla crítica:</strong> si una pregunta marcada como crítica queda en “No cumple”, el resultado final se muestra como <strong>Malo</strong>, aunque el porcentaje matemático sea alto.</div>
-        <div class="rule-box" style="margin-top:12px"><strong>Importante:</strong> si cambiás los rangos de Bueno / Regular / Malo y guardás, las auditorías ya realizadas se reclasifican automáticamente con el nuevo criterio. <strong>El porcentaje obtenido no cambia</strong>; solo cambia el resultado (Bueno, Regular o Malo). Los hallazgos críticos siguen prevaleciendo.</div>
+        <div class="rule-box"><strong>Preguntas críticas:</strong> un “No cumple” crítico queda destacado como hallazgo crítico en la auditoría y en el informe, pero <strong>no modifica por sí solo la clasificación Bueno / Regular / Malo</strong>. La clasificación se determina por el porcentaje y los rangos que vos definas.</div>
+        <div class="rule-box" style="margin-top:12px"><strong>Importante:</strong> si cambiás los rangos de Bueno / Regular / Malo y guardás, las auditorías ya realizadas se reclasifican automáticamente con el nuevo criterio. <strong>El porcentaje obtenido no cambia</strong>; cambia el resultado en Historial, Tablero, detalle e informe PDF.</div>
         <button class="btn primary" id="saveScoreCriteria" style="width:100%;margin-top:12px">Guardar criterio y actualizar historial</button>
       </div>
 
@@ -1620,17 +1620,15 @@ function saveAudits(){ localStorage.setItem(LS_AUDITS, JSON.stringify(audits)); 
 function saveDeviations(){ localStorage.setItem(LS_DEVIATIONS, JSON.stringify(deviations)); }
 function effectiveAuditRating(a){
   if(!a)return "Malo";
-  if(Array.isArray(a.answers)&&a.answers.length)return auditRatingFor(Number(a.score)||0,a.answers);
-  const current=ratingFor(Number(a.score)||0);
-  // Si llegó sin detalle y estaba Malo con un puntaje que hoy sería mejor, puede
-  // tratarse de una falla crítica. Conservamos ese Malo hasta cargar el detalle.
-  if(a.rating==="Malo" && current!=="Malo")return "Malo";
-  return current;
+  // El resultado visible siempre se calcula con los rangos actuales.
+  // De esta manera, al cambiar Bueno/Regular, Historial, Tablero, detalle y PDF
+  // se actualizan sin modificar el porcentaje obtenido en la auditoría.
+  return ratingFor(Number(a.score)||0);
 }
 function recalculateSavedAuditRatings(){
   let changed=0;
   audits.forEach(a=>{
-    const next=(Array.isArray(a.answers)&&a.answers.length)?auditRatingFor(Number(a.score)||0,a.answers):ratingFor(Number(a.score)||0);
+    const next=ratingFor(Number(a.score)||0);
     if(a.rating!==next){a.rating=next;changed++;cloudMarkAuditDirty(a.id);}
   });
   saveAudits();
@@ -1737,8 +1735,9 @@ function escapeHtml(v){ return String(v).replace(/[&<>"']/g,m=>({"&":"&amp;","<"
 
 function ratingFor(score){const g=Number(config.thresholds?.good)||90,r=Number(config.thresholds?.regular)||75;return score>=g?"Bueno":score>=r?"Regular":"Malo";}
 function auditRatingFor(score,items){
-  const hasCriticalFail=(items||[]).some(x=>x.critical && x.value==="bad");
-  return hasCriticalFail?"Malo":ratingFor(score);
+  // Las preguntas críticas se reportan y destacan como hallazgos,
+  // pero la clasificación general depende exclusivamente de los rangos actuales.
+  return ratingFor(score);
 }
 function ratingClass(x){return x==="Bueno"?"good":x==="Regular"?"regular":"bad";}
 function ratingEmoji(x){return x==="Bueno"?"😄":x==="Regular"?"😐":"☹️";}
@@ -2405,7 +2404,7 @@ document.getElementById("saveScoreCriteria").addEventListener("click",()=>{
   const regular=Math.min(good-1,Math.max(1,Number(document.getElementById("regularThreshold").value)||75));
   config.thresholds={good,regular}; saveConfig(); cloudPushCatalog().catch(console.error); updateScoreGuide();
   const changed=recalculateSavedAuditRatings();
-  alert(`Criterio guardado. Se mantuvieron los porcentajes originales y ${changed} auditoría(s) histórica(s) actualizaron su clasificación Bueno / Regular / Malo.`);
+  alert(`Criterio guardado. Se mantuvieron los porcentajes originales y ${changed} auditoría(s) histórica(s) actualizaron su resultado en Historial, Tablero e informes.`);
 });
 function renderQuestionEditor(){
   const sec=document.getElementById("editSector").value;
@@ -2792,7 +2791,7 @@ refreshSectors();
 initAudit();
 initCloud();
 if("serviceWorker" in navigator){
-  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js?v=19",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{}));
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js?v=29",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{}));
 }
 </script>
 </body>

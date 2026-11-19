@@ -1,3 +1,9 @@
+VERSIÓN 29
+- El resultado Bueno/Regular/Malo se recalcula en toda la app según los rangos actuales.
+- Historial, detalle, Tablero e informe PDF usan el mismo criterio dinámico.
+- Los hallazgos críticos siguen destacados, pero ya no fuerzan automáticamente el resultado a Malo.
+- El porcentaje original de la auditoría no se modifica al cambiar los rangos.
+
 VERSIÓN 28
 - Los rangos Bueno / Regular / Malo siguen siendo editables por el usuario.
 - Al guardar nuevos rangos, el historial se reclasifica automáticamente sin modificar el porcentaje original de cada auditoría.
