@@ -125,7 +125,7 @@
   <header>
     <h1>Auditoría EHS</h1>
     <p>Seguridad · Higiene · Medio Ambiente</p>
-  <div class="version-badge">Versión 30 · Informe visual y ejecución inmediata</div></header>
+  <div class="version-badge">Versión 31 · Fotos visibles y corrección en el momento</div></header>
   <nav id="tabs">
     <button data-page="new" class="active">Auditar</button>
     <button data-page="history">Historial</button>
@@ -183,7 +183,7 @@
       </div>
 
       <div class="card purpose-card">
-        <h2 class="section-title" style="margin-bottom:6px">Qué se realizó</h2>
+        <h2 class="section-title" style="margin-bottom:6px">Modalidad de la auditoría</h2>
         <div class="small" style="line-height:1.55">
           Se realiza una verificación puntual del estado EHS del sector, tomando como referencia las condiciones observadas al momento de la recorrida.
           El resultado representa la condición del día. Los hallazgos se conversan durante el encuentro para favorecer ajustes inmediatos cuando sea posible,
@@ -1843,7 +1843,7 @@ function formatKB(bytes){ return Math.max(1,Math.round((Number(bytes)||0)/1024))
 function initAudit(){
   const sector=document.getElementById("sectorSelect").value;
   const qs=(config.sectors[sector]||[]).map(normalizeQuestion);
-  answers=qs.map(q=>({question:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical,value:null,obs:"",immediateAction:"",photo:null}));
+  answers=qs.map(q=>({question:q.text,category:q.category,detail:q.detail,weight:q.weight,critical:q.critical,value:null,obs:"",correctedNow:false,immediateAction:"",photo:null}));
   renderQuestions();
   renderPreviousDeviations();
 }
@@ -1863,16 +1863,24 @@ function renderQuestions(){
         <button class="choice na ${a.value==="na"?"sel":""}" data-value="na">N/A</button>
       </div>
       <input class="obs" placeholder="${a.value==="bad"?"Hallazgo detectado / qué se observó":"Observación (si aplica)"}" value="${escapeHtml(a.obs||"")}">
-      ${a.value==="bad"?`<input class="immediate-action" style="margin-top:8px" placeholder="Ejecución inmediata / ajuste realizado (si aplica)" value="${escapeHtml(a.immediateAction||"")}">
-      <label style="margin-top:8px">Foto del hallazgo
+      ${a.value==="bad"?`<div style="margin-top:9px;padding:10px;border:1px solid #b7ded9;background:#f1fbf9;border-radius:12px">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:800;cursor:pointer">
+          <input type="checkbox" class="corrected-now" ${a.correctedNow?"checked":""} style="width:18px;height:18px"> Corregido en el momento
+        </label>
+        <div class="small muted" style="margin-top:4px">Marcá esta opción si el desvío observado se corrigió durante la recorrida.</div>
+        <input class="immediate-action" style="margin-top:8px" placeholder="¿Qué se realizó? Ej.: se retiró el material que obstruía el extintor" value="${escapeHtml(a.immediateAction||"")}">
+      </div>`:""}
+      <label style="margin-top:10px">${a.value==="bad"?"Foto del hallazgo":"Agregar foto (opcional)"}
         <input type="file" accept="image/*" capture="environment" class="photo">
       </label>
-      <div class="small muted">La foto se usa como evidencia del hallazgo y se optimiza automáticamente.</div>`:`<input type="file" accept="image/*" capture="environment" class="photo hidden">`}
+      <div class="small muted">Podés sacar o adjuntar una foto durante la recorrida. Se optimiza automáticamente.</div>
       <div class="preview"></div>`;
     div.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>{
       a.value=btn.dataset.value; renderQuestions();
     }));
     div.querySelector(".obs").addEventListener("input",e=>a.obs=e.target.value);
+    const correctedInput=div.querySelector(".corrected-now");
+    if(correctedInput) correctedInput.addEventListener("change",e=>a.correctedNow=!!e.target.checked);
     const immediateInput=div.querySelector(".immediate-action");
     if(immediateInput) immediateInput.addEventListener("input",e=>a.immediateAction=e.target.value);
     div.querySelector(".photo").addEventListener("change",async e=>{
@@ -2025,7 +2033,7 @@ function reportHtml(a){
       <td><span class="cat">${escapeHtml(x.category||"General")}</span></td>
       <td><strong>${escapeHtml(x.question)}</strong></td>
       <td><span class="pill ${x.value==='ok'?'ok':x.value==='bad'?'bad':'na'}">${x.value==='ok'?'Cumple':x.value==='bad'?'No cumple':'N/A'}</span></td>
-      <td>${escapeHtml(x.obs||"")||"—"}</td>
+      <td>${escapeHtml(x.obs||"")||"—"}${x.value!=="bad"&&x.photo?`<img src="${x.photo}" class="table-photo" alt="Evidencia del ítem">`:""}</td>
     </tr>`).join("");
 
   const evidence=findings.length?findings.map((x,i)=>`
@@ -2035,7 +2043,8 @@ function reportHtml(a){
         <div><div class="finding-cat">${escapeHtml(x.category||"General")}${x.critical?' · CRÍTICO':''}</div><strong>${escapeHtml(x.question)}</strong></div>
       </div>
       <div class="finding-block"><span>Hallazgo detectado</span><strong>${escapeHtml(x.obs||"Sin observación adicional.")}</strong></div>
-      ${x.immediateAction?`<div class="action-block"><span>Ejecución inmediata</span><strong>${escapeHtml(x.immediateAction)}</strong></div>`:""}
+      ${x.correctedNow?`<div class="action-block"><span>Estado</span><strong>✓ Corregido en el momento</strong></div>`:""}
+      ${x.immediateAction?`<div class="action-block"><span>Qué se realizó</span><strong>${escapeHtml(x.immediateAction)}</strong></div>`:""}
       ${x.photo?`<img src="${x.photo}" class="evidence-photo" alt="Evidencia del hallazgo">`:`<div class="no-photo">Sin evidencia fotográfica registrada.</div>`}
     </div>`).join(""):`<div class="good-note">No se registraron hallazgos en los ítems evaluados.</div>`;
 
@@ -2065,7 +2074,7 @@ function reportHtml(a){
     .num{font-weight:900;text-align:center;width:30px}.cat{display:inline-block;background:#edf8ff;border:1px solid #ccecff;color:#0d6aa8;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:900}.pill{display:inline-block;border-radius:999px;padding:4px 8px;font-weight:900;font-size:10px}.pill.ok{background:var(--green-soft);color:#166534}.pill.bad{background:var(--red-soft);color:#b42318}.pill.na{background:var(--gray-soft);color:#475569}
     .finding-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.finding-card{background:#fff;border:2px solid #ffd1d1;border-radius:16px;padding:12px;break-inside:avoid;page-break-inside:avoid}.finding-head{display:flex;align-items:flex-start;gap:9px}.finding-number{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--red);color:#fff;font-weight:900;flex:0 0 auto}.finding-cat{color:#b42318;font-size:10px;font-weight:900;text-transform:uppercase;margin-bottom:2px}
     .finding-block,.action-block{margin-top:9px;padding:9px 10px;border-radius:10px}.finding-block{background:#fff4f4}.action-block{background:#eefaf7}.finding-block span,.action-block span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:900;margin-bottom:3px}.finding-block span{color:#b42318}.action-block span{color:#0f766e}.finding-block strong,.action-block strong{font-size:12px;line-height:1.35}
-    .evidence-photo{display:block;width:100%;max-height:300px;object-fit:contain;margin-top:10px;border-radius:10px;border:1px solid var(--line);background:#f8fafc}.no-photo{margin-top:9px;color:var(--muted);font-size:11px;font-style:italic}.good-note{background:var(--green-soft);color:#166534;border-radius:12px;padding:10px 12px;font-weight:700}
+    .table-photo{display:block;width:82px;height:62px;object-fit:cover;margin-top:6px;border-radius:7px;border:1px solid var(--line);background:#f8fafc}.evidence-photo{display:block;width:100%;max-height:300px;object-fit:contain;margin-top:10px;border-radius:10px;border:1px solid var(--line);background:#f8fafc}.no-photo{margin-top:9px;color:var(--muted);font-size:11px;font-style:italic}.good-note{background:var(--green-soft);color:#166534;border-radius:12px;padding:10px 12px;font-weight:700}
     .footer-note{margin-top:12px;color:var(--muted);font-size:10px;text-align:right}
     @media(max-width:700px){.kpis{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:1fr}.finding-grid{grid-template-columns:1fr}}
     @media print{body{background:#fff}.wrap{padding:7mm}.hero,.box,.summary-card{box-shadow:none}.finding-grid{display:block}.finding-card{margin-bottom:9px}tr{break-inside:avoid;page-break-inside:avoid}.evidence-photo{max-height:105mm!important;object-fit:contain}.section{break-inside:auto}.summary-grid{break-inside:avoid;page-break-inside:avoid}}
@@ -2080,7 +2089,7 @@ function reportHtml(a){
       <div class="box"><div class="label">N/A</div><div class="score" style="color:var(--gray)">${naCount}</div><div class="sub">no aplican</div></div>
     </div>
 
-    <div class="section"><div class="section-title">Qué se realizó</div><div class="purpose">${escapeHtml(purposeText)}</div></div>
+    <div class="section"><div class="section-title">Modalidad de la auditoría</div><div class="purpose">${escapeHtml(purposeText)}</div></div>
 
     <div class="section">
       <div class="section-title">Resumen visual de lo relevado</div>
@@ -2328,7 +2337,8 @@ function renderHistory(){
             <strong>${i+1}. ${escapeHtml(x.question)}</strong>
             <div class="small muted">${escapeHtml(x.category||"General")}${x.critical?" · Crítica":""}${x.detail?" · "+escapeHtml(x.detail):""}</div>
             <div class="small">${x.value==="ok"?"Cumple":x.value==="bad"?"No cumple":"N/A"}${x.obs?" · "+escapeHtml(x.obs):""}</div>
-            ${x.value==="bad"&&x.immediateAction?`<div class="small" style="margin-top:4px"><strong>Ejecución inmediata:</strong> ${escapeHtml(x.immediateAction)}</div>`:""}
+            ${x.value==="bad"&&x.correctedNow?`<div class="small" style="margin-top:4px;color:#08746c"><strong>✓ Corregido en el momento</strong></div>`:""}
+            ${x.value==="bad"&&x.immediateAction?`<div class="small" style="margin-top:4px"><strong>Qué se realizó:</strong> ${escapeHtml(x.immediateAction)}</div>`:""}
             ${x.photo?`<img src="${x.photo}" class="photo-preview" alt="Evidencia">`:""}
           </div>`).join("")+(a.generalObs?`<div class="list-item"><strong>Observación general</strong><div class="small">${escapeHtml(a.generalObs)}</div></div>`:"");
       } else det.classList.add("hidden");

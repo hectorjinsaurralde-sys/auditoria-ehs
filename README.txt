@@ -1,3 +1,11 @@
+VERSIÓN 31 · Fotos visibles y corrección en el momento
+
+- La opción de agregar foto vuelve a estar visible en cada ítem de la auditoría.
+- Al marcar “No cumple” aparece “Corregido en el momento” y el campo “¿Qué se realizó?”.
+- El informe/PDF muestra “Corregido en el momento” y “Qué se realizó” dentro de cada hallazgo.
+- Las fotos de hallazgos se muestran grandes; las fotos opcionales de otros ítems quedan como evidencia compacta.
+- “Qué se realizó” del encabezado general pasa a llamarse “Modalidad de la auditoría” para no confundirse con la corrección puntual del hallazgo.
+
 VERSIÓN 30 · Informe visual, colores impresos y ejecución inmediata
 
 VERSIÓN 29
