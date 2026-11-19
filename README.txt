@@ -1,3 +1,17 @@
+VERSIÓN 28
+- Los rangos Bueno / Regular / Malo siguen siendo editables por el usuario.
+- Al guardar nuevos rangos, el historial se reclasifica automáticamente sin modificar el porcentaje original de cada auditoría.
+- Una falla crítica continúa forzando resultado Malo.
+
+VERSIÓN 27 - AUDITORÍAS EDITABLES E INFORME RESUMEN
+
+- Historial: nuevo botón “Editar auditoría”.
+- Al editar respuestas se recalculan puntaje, resultado y hallazgos.
+- Al cambiar los límites Bueno/Regular/Malo se actualiza el resultado de las auditorías históricas.
+- El informe/PDF agrega “Resumen de lo observado”.
+- El informe muestra todos los ítems auditados y, aparte, los hallazgos con la foto correspondiente en tamaño visible.
+- Eliminar o editar una auditoría intenta mantener coherente el historial de hallazgos.
+
 VERSIÓN 26 - RECEPCIÓN DE MATERIALES
 
 - El sector "Logística" pasa a llamarse "Recepción de materiales".
